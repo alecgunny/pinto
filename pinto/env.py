@@ -62,6 +62,16 @@ class PoetryEnvironment(Environment):
             self.create()
 
     @property
+    def env_root(self):
+        if self._venv is None:
+            # TODO: this isn't exactly right, but the
+            # logic is a lot to reimplement and is the
+            # environment doesn't exist yet, this seems
+            # like a fair thing to return
+            return self._manager.get()
+        return self._venv.path
+
+    @property
     def name(self) -> str:
         if self._venv is not None:
             return self._venv.path.name
@@ -208,8 +218,7 @@ class CondaEnvironment(Environment):
                 # load the file and get the name of the associated environment
                 env_name = _load_env_file(base_env)["name"]
             else:
-                # otherwise assume its specifying an
-                # environment by name
+                # otherwise assume its specifying an environment by name
                 env_name = base_env
 
             if env_name.endswith("-base"):
@@ -242,9 +251,8 @@ class CondaEnvironment(Environment):
                     "from environment file {}".format(env_name, self._base_env)
                 )
 
-                # unfortunately the conda python api
-                # doesn't support creating from an
-                # environment file, so call this
+                # unfortunately the conda python api doesn't support
+                # creating from an environment file, so call this
                 # subprocess manually
                 conda_cmd = f"conda env create -f {self._base_env}"
                 response = subprocess.run(

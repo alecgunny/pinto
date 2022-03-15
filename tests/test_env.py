@@ -1,12 +1,7 @@
-import os
-import shutil
-import subprocess
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-import yaml
-from conda.core.prefix_data import PrefixData
 
 from pinto.env import CondaEnvironment, Environment, PoetryEnvironment
 
@@ -31,42 +26,16 @@ def nest(request):
 
 
 @pytest.fixture
-def conda_project_with_local_environment(
-    conda_project_dir, yaml_extension, conda_environment_dict, nest
-):
-    if nest:
-        # if we'r nesting, copy all the files from the
-        # test project into a subdirectory
-        project_dir = conda_project_dir / "testlib"
-        os.makedirs(project_dir)
-        for f in os.listdir(conda_project_dir):
-            if f == "testlib":
-                continue
-            shutil.move(conda_project_dir / f, project_dir)
-
-        # if we're testing the "<name>-base" syntax, replace
-        # the name in the environment dictionary
-        if nest == "base":
-            conda_environment_dict["name"] = "pinto-base"
-    else:
-        project_dir = conda_project_dir
-
-    # write the environment dictionary to the
-    # top level directory, whether we're nesting
-    # or not
-    environment_file = conda_project_dir / ("environment." + yaml_extension)
-    with open(environment_file, "w") as f:
-        yaml.dump(conda_environment_dict, f)
-
+def conda_project(complete_conda_project_dir):
     project = Mock()
-    project.path = project_dir
+    project.path = complete_conda_project_dir
     project.name = "testlib"
     project.pinto_config = {}
     return project
 
 
 @pytest.fixture
-def conda_project_with_no_environment(conda_project_dir, conda_poetry_config):
+def conda_project_with_no_environment(conda_project_dir):
     project = Mock()
     project.path = conda_project_dir
     project.name = "testlib"
@@ -92,7 +61,7 @@ def _test_installed_env(env, project):
     assert output.startswith("Good job!")
 
 
-def test_poetry_environment(poetry_project):
+def test_poetry_environment(poetry_project, poetry_env_context):
     # make sure that the __new__ method maps correctly from
     # a project with no "poetry.toml" to a PoetryEnvironment
     env = Environment(poetry_project)
@@ -106,31 +75,32 @@ def test_poetry_environment(poetry_project):
     # create the underlying virtual environment
     # and ensure its name is correct
     venv = env.create()
-    assert env.name == venv.path.name
-    assert env.name.startswith(
-        env._manager.generate_env_name(
-            poetry_project.name, str(poetry_project.path)
+    with poetry_env_context(env):
+        assert env.name == venv.path.name
+        assert env.name.startswith(
+            env._manager.generate_env_name(
+                poetry_project.name, str(poetry_project.path)
+            )
         )
-    )
 
-    # make sure that the environment exists, but
-    # that it doesn't contain the corresponding
-    # project since we haven't installed it yet
-    assert env.exists()
-    assert not env.contains(poetry_project)
+        # make sure that the environment exists, but
+        # that it doesn't contain the corresponding
+        # project since we haven't installed it yet
+        assert env.exists()
+        assert not env.contains(poetry_project)
 
-    # install the project and then run standard
-    # tests on the now complete environment
-    env.install()
-    _test_installed_env(env, poetry_project)
+        # install the project and then run standard
+        # tests on the now complete environment
+        env.install()
+        _test_installed_env(env, poetry_project)
 
 
-def test_conda_environment_with_local_environment_file(
-    conda_project_with_local_environment, yaml_extension, nest
+def test_conda_environment(
+    conda_project, yaml_extension, nest, conda_env_context
 ):
     # make sure that the __new__ method maps correctly from
     # a project with a "poetry.toml" to a CondaEnvironment
-    env = Environment(conda_project_with_local_environment)
+    env = Environment(conda_project)
     assert isinstance(env, CondaEnvironment)
 
     expected_path = Path(__file__).resolve().parent / "tmp"
@@ -148,7 +118,7 @@ def test_conda_environment_with_local_environment_file(
         else:
             # otherwise the project name will be the
             # default environment name
-            expected_name = conda_project_with_local_environment.name
+            expected_name = conda_project.name
 
     # make sure that all of our expectations are
     # met and that the environment doesn't exist yet
@@ -161,12 +131,12 @@ def test_conda_environment_with_local_environment_file(
     # the tests in a context so that it gets
     # deleted at the end
     env.create()
-    try:
+    with conda_env_context(env):
         # make sure the environment exists now, but
         # that it still doesn't contain the relevant
         # project since we haven't installed it
         assert env.exists()
-        assert not env.contains(conda_project_with_local_environment)
+        assert not env.contains(conda_project)
 
         # make sure that we can import the dependency
         # listed in our _conda_ environment file, and
@@ -177,37 +147,7 @@ def test_conda_environment_with_local_environment_file(
         # now install the test package and run the
         # standard tests on it
         env.install()
-        _test_installed_env(env, conda_project_with_local_environment)
-    finally:
-        # delete all the environments no matter what
-        # happened so that future tests can get a
-        # fresh set of environments to deal with
-        envs = [env.name]
-
-        # make sure to include the environment we've
-        # cloned from if we're running a nested test
-        if nest == "base":
-            envs.append("pinto-base")
-        elif nest:
-            envs.append("pinto-testenv")
-
-        # run the command manually since conda env
-        # commands aren't supported in the python api
-        for env_name in envs:
-            response = subprocess.run(
-                f"conda env remove -n {env_name}",
-                shell=True,
-                capture_output=True,
-                text=True,
-            )
-            if response.returncode:
-                raise RuntimeError(response.stderr)
-
-            # remove the environment package cache
-            try:
-                PrefixData._cache_.pop(env.env_root)
-            except KeyError:
-                pass
+        _test_installed_env(env, conda_project)
 
 
 def test_conda_environment_with_no_environment_file(
