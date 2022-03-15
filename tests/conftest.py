@@ -145,3 +145,19 @@ def conda_env_context(nest):
 @pytest.fixture
 def poetry_env_context():
     return _poetry_env_context
+
+
+def _test_installed_project(project):
+    assert project._venv.exists()
+    assert project._venv.contains(project)
+
+    output = project.run("testme")
+    assert output.rstrip() == "can you hear me?"
+
+    output = project.run("python", "-c", "import pip_install_test")
+    assert output.startswith("Good job!")
+
+
+@pytest.fixture
+def installed_project_tests():
+    return _test_installed_project

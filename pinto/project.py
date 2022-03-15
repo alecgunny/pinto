@@ -1,4 +1,3 @@
-import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,6 +6,7 @@ from typing import Optional
 import toml
 
 from pinto.env import Environment
+from pinto.logging import logger
 
 
 @dataclass
@@ -91,7 +91,7 @@ class Project(ProjectBase):
         # ensure environment has this project
         # installed somewhere
         if not self._venv.contains(self):
-            logging.info(
+            logger.info(
                 "Installing project '{}' from '{}' into "
                 "virtual environemnt '{}'".format(
                     self.name, self.path, self._venv.name
@@ -99,7 +99,7 @@ class Project(ProjectBase):
             )
             self._venv.install()
         elif force:
-            logging.info(
+            logger.info(
                 "Updating project '{}' from '{}' in "
                 "virtual environment '{}'".format(
                     self.name, self.path, self._venv.name
@@ -110,7 +110,7 @@ class Project(ProjectBase):
             # command look like for the poetry env?
             self._venv.install()
         else:
-            logging.info(
+            logger.info(
                 "Project '{}' at '{}' already installed in "
                 "virtual environment '{}'".format(
                     self.name, self.path, self._venv.name
@@ -151,6 +151,8 @@ class Project(ProjectBase):
 
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
+
+        logger.debug(f"Executing command '{args}' in project {self.path}")
         return self._venv.run(*args)
 
 
@@ -188,7 +190,7 @@ class Pipeline(ProjectBase):
 
     def run(self):
         for step in self.steps:
-            logging.debug(f"Parsing pipeline step {step}")
+            logger.debug(f"Parsing pipeline step {step}")
 
             try:
                 component, command, subcommand = step.split(":")
@@ -201,7 +203,7 @@ class Pipeline(ProjectBase):
 
             project = self.create_project(component)
             stdout = self.run_step(project, command, subcommand)
-            logging.info(stdout)
+            logger.info(stdout)
 
     def run_step(
         self, project: Project, command: str, subcommand: Optional[str] = None

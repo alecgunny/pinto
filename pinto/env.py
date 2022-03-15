@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 import subprocess
@@ -14,6 +13,8 @@ from poetry.factory import Factory
 from poetry.installation.installer import Installer
 from poetry.masonry.builders import EditableBuilder
 from poetry.utils.env import EnvManager
+
+from pinto.logging import logger
 
 if TYPE_CHECKING:
     from .project import Project
@@ -234,7 +235,7 @@ class CondaEnvironment(Environment):
     def create(self):
         # TODO: do this check in the parent class?
         if self.exists():
-            logging.warning(f"Environment {self.name} already exists")
+            logger.warning(f"Environment {self.name} already exists")
             return
 
         # if the base environment is specified as a yaml
@@ -246,7 +247,7 @@ class CondaEnvironment(Environment):
             # if the environment doesn't exist yet, create it
             # using the indicated environnment file
             if not _env_exists(env_name):
-                logging.info(
+                logger.info(
                     "Creating conda environment {} "
                     "from environment file {}".format(env_name, self._base_env)
                 )
@@ -265,7 +266,7 @@ class CondaEnvironment(Environment):
                             conda_cmd, response.returncode, response.stderr
                         )
                     )
-                logging.info(response.stdout)
+                logger.info(response.stdout)
 
             # if the specified environment file is for
             # _this_ environment, then we're done here
@@ -279,7 +280,7 @@ class CondaEnvironment(Environment):
 
         # otherwise create a fresh environment
         # by cloning the indicated environment
-        logging.info(
+        logger.info(
             "Creating environment {} by cloning from environment {}".format(
                 self.name, env_name
             )
@@ -287,7 +288,7 @@ class CondaEnvironment(Environment):
         stdout = _run_conda_command(
             conda.Commands.CREATE, "-n", self.name, "--clone", env_name
         )
-        logging.info(stdout)
+        logger.info(stdout)
 
     def contains(self, project: "Project") -> bool:
         project_name = project.name.replace("-", "_")

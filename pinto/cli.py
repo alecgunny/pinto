@@ -3,6 +3,7 @@ import logging
 import sys
 
 from pinto import __version__
+from pinto.logging import logger
 from pinto.project import Pipeline, Project
 
 
@@ -14,7 +15,9 @@ def main():
         "--version", action="version", version=f"Pinto version {__version__}"
     )
     parser.add_argument("--log-file", type=str, help="Path to write logs to")
-    parser.add_argument("--verbose", action="store_true", help="Log verbosity")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Log verbosity"
+    )
 
     # now add subparsers for each subcommand we want to implement
     subparsers = parser.add_subparsers(dest="subcommand")
@@ -25,13 +28,13 @@ def main():
         "run", description="Run a project or pipeline"
     )
     subparser.add_argument(
-        "project-path", type=str, help="Project or pipeline to run"
+        "project_path", type=str, help="Project or pipeline to run"
     )
 
     # add a parser for just building the environment
     # for a specified project
     subparser = subparsers.add_parser("build", description="Build a project")
-    subparser.add_argument("project", type=str, help="Project to build")
+    subparser.add_argument("project_path", type=str, help="Project to build")
     subparser.add_argument(
         "-f", "--force", action="store_true", help="Force rebuild"
     )
@@ -42,18 +45,14 @@ def main():
     args, unknown_args = parser.parse_known_args()
 
     # set up logging based on some of the top level args
-    # TODO: is setting up the stdout stream no matter
-    # what the args say the best way of doing this?
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging.DEBUG if args.verbose else logging.INFO,
-    )
+    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
     # set up a file handler if we specified a file
     # to write our logs to
     if args.log_file is not None:
         handler = logging.FileHandler(filename=args.log_file, mode="w")
-        logging.getLogger().addHandler(handler)
+        logger.addHandler(handler)
 
     if args.subcommand == "run":
         # first see if the project_path is to a single project
@@ -86,7 +85,9 @@ def main():
             # if the pyproject has a "tool.poetry" table,
             # we assume that this is a single project and
             # execute any additional arguments passed
-            project.run(*unknown_args)
+            stdout = project.run(*unknown_args)
+            logger.info(stdout)
+
     elif args.subcommand == "build":
         if len(unknown_args) > 0:
             raise parser.error(f"Unknown arguments {unknown_args}")
