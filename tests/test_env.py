@@ -1,9 +1,10 @@
+import os
+import shutil
 import subprocess
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-import toml
 import yaml
 from conda.core.prefix_data import PrefixData
 
@@ -23,18 +24,42 @@ def yaml_extension(request):
     return request.param
 
 
+@pytest.fixture(params=[False, True, "base"])
+def nest(request):
+    return request.param
+
+
 @pytest.fixture
 def conda_project_with_local_environment(
-    project_dir, yaml_extension, conda_environment_dict, conda_poetry_config
+    conda_project_dir, yaml_extension, conda_environment_dict, nest
 ):
-    with open(project_dir / ("environment." + yaml_extension), "w") as f:
-        yaml.dump(conda_environment_dict, f)
+    if nest:
+        project_dir = conda_project_dir / "testlib"
+        os.makedirs(project_dir)
+        for f in os.listdir(conda_project_dir):
+            if f == "testlib":
+                continue
+            shutil.move(conda_project_dir / f, project_dir)
+        if nest == "base":
+            conda_environment_dict["name"] = "pinto-base"
+    else:
+        project_dir = conda_project_dir
 
-    with open(project_dir / "poetry.toml", "w") as f:
-        toml.dump(conda_poetry_config, f)
+    environment_file = conda_project_dir / ("environment." + yaml_extension)
+    with open(environment_file, "w") as f:
+        yaml.dump(conda_environment_dict, f)
 
     project = Mock()
     project.path = project_dir
+    project.name = "testlib"
+    project.pinto_config = {}
+    return project
+
+
+@pytest.fixture
+def conda_project_with_no_environment(conda_project_dir, conda_poetry_config):
+    project = Mock()
+    project.path = conda_project_dir
     project.name = "testlib"
     project.pinto_config = {}
     return project
@@ -71,14 +96,26 @@ def test_poetry_environment(poetry_project):
 
 
 def test_conda_environment_with_local_environment_file(
-    conda_project_with_local_environment, yaml_extension
+    conda_project_with_local_environment, yaml_extension, nest
 ):
     env = Environment(conda_project_with_local_environment)
     assert isinstance(env, CondaEnvironment)
-    assert env.path == Path(__file__).resolve().parent / "tmp"
+
+    expected_path = Path(__file__).resolve().parent / "tmp"
+    expected_env = expected_path / ("environment." + yaml_extension)
+    expected_name = "pinto-testenv"
+    if nest:
+        expected_path /= "testlib"
+
+        if nest == "base":
+            expected_name = "pinto-testlib"
+        else:
+            expected_name = conda_project_with_local_environment.name
+
+    assert env.path == expected_path
     assert not env.exists()
-    assert env.name == "pinto-testenv"
-    assert env._base_env == env.path / ("environment." + yaml_extension)
+    assert env.name == expected_name
+    assert env._base_env == expected_env
 
     env.create()
     try:
@@ -90,13 +127,28 @@ def test_conda_environment_with_local_environment_file(
         env.install()
         _test_installed_env(env, conda_project_with_local_environment)
     finally:
-        response = subprocess.run(
-            f"conda env remove -n {env.name}",
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
-        if response.returncode:
-            raise RuntimeError(response.stderr)
+        envs = [env.name]
+        if nest:
+            envs.append("pinto-testenv")
 
-        PrefixData._cache_.pop(env.env_root)
+        for env_name in envs:
+            response = subprocess.run(
+                f"conda env remove -n {env_name}",
+                shell=True,
+                capture_output=True,
+                text=True,
+            )
+            if response.returncode:
+                raise RuntimeError(response.stderr)
+
+            try:
+                PrefixData._cache_.pop(env.env_root)
+            except KeyError:
+                pass
+
+
+def test_conda_environment_with_no_environment_file(
+    conda_project_with_no_environment,
+):
+    with pytest.raises(ValueError):
+        Environment(conda_project_with_no_environment)

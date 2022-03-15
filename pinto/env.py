@@ -271,7 +271,12 @@ class CondaEnvironment(Environment):
 
         # otherwise create a fresh environment
         # by cloning the indicated environment
-        stdout = self.run_command(
+        logging.info(
+            "Creating environment {} by cloning from environment {}".format(
+                self.name, env_name
+            )
+        )
+        stdout = _run_conda_command(
             conda.Commands.CREATE, "-n", self.name, "--clone", env_name
         )
         logging.info(stdout)
@@ -290,10 +295,10 @@ class CondaEnvironment(Environment):
         # Conda caches calls to `conda list`, so manually update
         # the cache to reflect the newly pip-installed packages
         try:
-            prefix_data = PrefixData._cache_[self.env_root]
-            PrefixData._cache_[self.env_root] = prefix_data.reload()
+            PrefixData._cache_.pop(self.env_root)
         except KeyError:
             pass
+
         return response
 
     def run(self, *args):

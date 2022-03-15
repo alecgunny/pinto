@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import toml
 
 
 @pytest.fixture
@@ -36,3 +37,10 @@ def project_dir(pyproject):
 
     yield project_dir
     shutil.rmtree(project_dir)
+
+
+@pytest.fixture
+def conda_project_dir(project_dir, conda_poetry_config):
+    with open(project_dir / "poetry.toml", "w") as f:
+        toml.dump(conda_poetry_config, f)
+    return project_dir
