@@ -1,0 +1,11 @@
+[tool.poetry]
+name = "testlib"
+version = "0.0.1"
+description = "Dummy pyproject for testing pinto"
+authors = ["Alec Gunny <alec.gunny@gmail.com>"]
+
+[tool.poetry.scripts]
+testme = "testlib:main"
+
+[tool.poetry.dependencies]
+pip_install_test = "^0.5"
