@@ -43,7 +43,16 @@ class Project(ProjectBase):
 
     def __post_init__(self):
         super().__post_init__()
-        self.name = self._config["tool"]["poetry"]["name"]
+        try:
+            self.name = self._config["tool"]["poetry"]["name"]
+        except KeyError as e:
+            if "poetry" in str(e):
+                raise ValueError(
+                    "Project config '{}' has no 'tool.poetry' table".format(
+                        self.path / "pyproject.toml"
+                    )
+                )
+
         self._venv = Environment(self)
 
     @property
@@ -176,6 +185,23 @@ class Pipeline(ProjectBase):
 
     def create_project(self, name):
         return Project(self.path / name)
+
+    def run(self):
+        for step in self.steps:
+            logging.debug(f"Parsing pipeline step {step}")
+
+            try:
+                component, command, subcommand = step.split(":")
+            except ValueError:
+                try:
+                    component, command = step.split(":")
+                    subcommand = None
+                except ValueError:
+                    raise ValueError(f"Can't parse pipeline step '{step}'")
+
+            project = self.create_project(component)
+            stdout = self.run_step(project, command, subcommand)
+            logging.info(stdout)
 
     def run_step(
         self, project: Project, command: str, subcommand: Optional[str] = None
