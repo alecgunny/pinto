@@ -6,7 +6,7 @@ Most ongoing research in the [ML4GW](https://github.com/ML4GW) organization leve
 
 However, several tools in the Python gravitational wave analysis ecosystem can only be installed via Conda (in particular the [library](https://anaconda.org/conda-forge/python-ldas-tools-framecpp/) GWpy uses to read and write `.gwf` files and the library it uses for [reading archival data from the NDS2 server](https://anaconda.org/conda-forge/python-nds2-client)). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into _Conda_ virtual environments, and others which don't require Conda at all and can install all the libraries they need into _Poetry_ virtual environments.
 
-### Enter Pinto
+### Enter: Pinto
 Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.
 
 ```console
@@ -40,7 +40,7 @@ When building your project, Pinto will first look for an entry that looks like
 
 ```toml
 [tool.pinto]
-base_env = /path/to/environment.yaml
+base_env = "/path/to/environment.yaml"
 ```
 
 In your project's `pyproject.toml`. If this entry doesn't exist, Pinto will look for a file called either `environment.yaml` or `environment.yml` starting in your project's directory, then ascending up your directory tree to the root, using the first file it finds. This way, you can easily have a base `environment.yaml` in the root of a monorepo from on top of which all your projects build, while leaving projects the option of overriding this base image with their own `environment.yaml`.
