@@ -9,7 +9,6 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-    steps:
     - uses: actions/setup-python@v2
     - 
       name: install myst
