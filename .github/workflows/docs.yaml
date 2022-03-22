@@ -21,6 +21,9 @@ jobs:
     - 
       name: Build and Commit docs
       uses: sphinx-notes/pages@v2
+    -
+      name: Check build
+      run: ls docs
     - 
       name: Push changes
       uses: ad-m/github-push-action@master
