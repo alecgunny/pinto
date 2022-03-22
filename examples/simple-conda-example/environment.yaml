@@ -1,0 +1,3 @@
+name: pinto-conda-example
+dependencies:
+  - requests

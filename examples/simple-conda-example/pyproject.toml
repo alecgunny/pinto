@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pinto-poetry-example"
+name = "pinto-conda-example"
 version = "0.0.1"
-description = "Dummy example pure poetry pinto example"
+description = "Dummy example Conda pinto example"
 authors = ["Alec Gunny <alec.gunny@gmail.com>"]
 
 [tool.poetry.scripts]
-testme = "pinto_poetry_example:main"
+testme = "pinto_conda_example:main"
 
 [tool.poetry.dependencies]
 pip_install_test = "^0.5"

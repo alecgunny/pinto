@@ -291,8 +291,7 @@ class CondaEnvironment(Environment):
         logger.info(stdout)
 
     def contains(self, project: "Project") -> bool:
-        project_name = project.name.replace("-", "_")
-        regex = re.compile(f"(?m)^{project_name} ")
+        regex = re.compile(f"(?m)^{project.name} ")
         package_list = _run_conda_command(conda.Commands.LIST, "-n", self.name)
         return regex.search(package_list) is not None
 
