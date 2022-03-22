@@ -4,8 +4,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>&lt;no title&gt; &#8212; Pinto 0.0.1 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Nested Conda Example &#8212; Pinto 0.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -14,7 +15,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="simple-conda-example_link.html" />
+    <link rel="prev" title="Simple Conda Example" href="simple-conda-example_link.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,7 +32,22 @@
 
           <div class="body" role="main">
             
-  
+  <section class="tex2jax_ignore mathjax_ignore" id="nested-conda-example">
+<h1>Nested Conda Example<a class="headerlink" href="#nested-conda-example" title="Permalink to this headline">¶</a></h1>
+<p>Almost everything from the <code class="docutils literal notranslate"><span class="pre">simple-conda-example</span></code> <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">README</span></code></span> should apply here, with one major exception.
+Notice that the project itself, which is hosted in <code class="docutils literal notranslate"><span class="pre">src</span></code>, does <em>not</em> have an <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> (which instead lives in <span class="xref myst">this directory</span>).
+However, since this is the first <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> climbing up the <code class="docutils literal notranslate"><span class="pre">src</span></code> directory’s tree, the <code class="docutils literal notranslate"><span class="pre">pinto-nested-conda-example</span></code> project hosted in <code class="docutils literal notranslate"><span class="pre">src</span></code> will still use it to build its environment, using Poetry to install its dependencies on top of this environment.
+Moreover, since the <code class="docutils literal notranslate"><span class="pre">name</span></code> given in <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> is <code class="docutils literal notranslate"><span class="pre">example-base</span></code>, ending in <code class="docutils literal notranslate"><span class="pre">-base</span></code>, the name of the environment <code class="docutils literal notranslate"><span class="pre">pinto-nested-conda-example</span></code> will build when you run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build src</span>
+</pre></div>
+</div>
+<p>is <code class="docutils literal notranslate"><span class="pre">example-pinto-nested-conda-example</span></code> (pardon the tautology), replacing <code class="docutils literal notranslate"><span class="pre">-base</span></code> with the name of the specific project.</p>
+<p>There could therefore be multiple subprojects beside the one living in <code class="docutils literal notranslate"><span class="pre">src</span></code> underneath this directory that all build off of the same environment file.</p>
+<p>In practice what happens is that when the first subproject gets built, let’s say the one in <code class="docutils literal notranslate"><span class="pre">src</span></code>, the <code class="docutils literal notranslate"><span class="pre">example-base</span></code> environment gets built for the first time, then cloned to an environment named <code class="docutils literal notranslate"><span class="pre">example-pinto-nested-conda-example</span></code>, into which all the Poetry dependencies are installed.
+All subsequent subprojects would clone the existing <code class="docutils literal notranslate"><span class="pre">example-base</span></code> environment and install their dependencies inside of their clones.
+Therefore, if you make any changes to the base <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code>, you’ll want to either delete or update the base environment so that subsequent builds have the updated Conda requirements.</p>
+</section>
+
 
           </div>
           
@@ -50,8 +66,13 @@
 
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Example Projects</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="examples.html">Example Projects</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simple-poetry-example_link.html">Simple Poetry Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simple-conda-example_link.html">Simple Conda Example</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Nested Conda Example</a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
@@ -59,7 +80,7 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="examples.html">Example Projects</a><ul>
-      <li>Previous: <a href="simple-conda-example_link.html" title="previous chapter">&lt;no title&gt;</a></li>
+      <li>Previous: <a href="simple-conda-example_link.html" title="previous chapter">Simple Conda Example</a></li>
   </ul></li>
   </ul></li>
 </ul>
