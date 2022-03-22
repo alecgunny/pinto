@@ -50,7 +50,7 @@ In fact, if the `name` listed in the `environment.yaml` Pinto finds ends with `-
 ```yaml
 name: myproject-base
 dependencies:
-    ...
+    - ...
 ```
 
 then Pinto will name your project's virtual environment `myproject-nn-trainer`.
@@ -62,15 +62,26 @@ To see more examples of project structures, consult the [`examples`](./examples)
 ### Environment set up
 Pinto requires local versions of both Conda and Poetry.
 First make sure that you have a _local_ version of Conda installed in your environment (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)).
-Then ensure that you have the latest version of [Poetry](https://python-poetry.org/) installed following the instructions [here](https://python-poetry.org/docs/master/#installing-with-the-official-installer).
-The upshot is that you should just need to run
+Then ensure that you have the latest version of [Poetry](https://python-poetry.org/) installed following the instructions [here](https://python-poetry.org/docs/master/#installing-with-the-official-installer), the upshot being that you should just need to run
 
 ```console
 curl -sSL https://install.python-poetry.org | python3 - --preview
 ```
 
-Then from this directory, **and in your _base_ Conda environment**, simply run
+Then from this directory, **and in your _base_ Conda environment**, first make sure that this project will install to your system Python `site-packages` (i.e. the base Conda environment's `site_packages`), run
+
+```console
+poetry config virtualenvs.create false --local
+```
+
+Then simply run
 
 ```console
 poetry install
+```
+
+or, to install without develop dependencies like pytest and sphinx, run
+
+```console
+poetry install --without dev
 ```
