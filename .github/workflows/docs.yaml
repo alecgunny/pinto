@@ -9,16 +9,22 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    steps:
+    - uses: actions/setup-python@v2
     - 
-      name: Build docs
-      uses: ammaraskar/sphinx-action@master
-      with:
-        pre-build-command: "python -m pip install myst-parser[linkify]"
-        docs-folder: "docs/"
+      name: install myst
+      runs: "python -m pip install myst-parser[linkify]"
     - 
-      name: Deploy pages
-      uses: JamesIves/github-pages-deploy-action@v4.2.5
+      name: checkout
+      uses: actions/checkout@v1
       with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+    - 
+      name: Build and Commit docs
+      uses: sphinx-notes/pages@v2
+    - 
+      name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: gh-pages
-        folder: docs/_build/html
