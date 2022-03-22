@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pinto-poetry-example"
+name = "pinto-nested-conda-example"
 version = "0.0.1"
-description = "Dummy Pinto pure Poetry project example"
+description = "Dummy Pinto nested Conda project example"
 authors = ["Alec Gunny <alec.gunny@gmail.com>"]
 
 [tool.poetry.scripts]
-testme = "pinto_poetry_example:main"
+testme = "pinto_nested_conda_example:main"
 
 [tool.poetry.dependencies]
 pip_install_test = "^0.5"

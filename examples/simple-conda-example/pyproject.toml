@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pinto-conda-example"
 version = "0.0.1"
-description = "Dummy example Conda pinto example"
+description = "Dummy Pinto Conda project example"
 authors = ["Alec Gunny <alec.gunny@gmail.com>"]
 
 [tool.poetry.scripts]

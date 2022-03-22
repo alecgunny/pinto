@@ -29,7 +29,10 @@ pinto run . testme
 Which should print
 
 ```console
-TODO: fill out
+Good job!  You installed a pip module.
+
+Now get back to work!
+Everything's working!
 ```
 
 If you wanted to do this _without_ `pinto`, you could always activate the conda environment and run things in there

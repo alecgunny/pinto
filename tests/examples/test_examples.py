@@ -20,21 +20,24 @@ def _run_command(cmd):
 
 
 @pytest.fixture(params=os.listdir(EXAMPLES_DIR))
-def test_dir(request):
-    return EXAMPLES_DIR / request.param
+def example_dir(request):
+    example_dir = EXAMPLES_DIR / request.param
+    if "nested" in request.param:
+        example_dir /= "src"
+    return example_dir
 
 
-def test_simple_poetry_example(test_dir):
-    response = _run_command(f"pinto build {test_dir}")
+def test_simple_poetry_example(example_dir):
+    response = _run_command(f"pinto build {example_dir}")
 
-    project = Project(test_dir)
-    if "poetry" in test_dir.name:
+    project = Project(example_dir)
+    if "poetry" in example_dir.name:
         env = PoetryEnvironment(project)
     else:
         env = CondaEnvironment(project)
     assert env.exists()
     assert env.contains(project)
 
-    response = _run_command(f"pinto run {test_dir} testme")
+    response = _run_command(f"pinto run {example_dir} testme")
     assert response.startswith("Good job!")
     assert response.rstrip().endswith("Everything's working!")
