@@ -10,11 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: ammaraskar/sphinx-action@master
+    - 
+      name: Build docs
+      uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
-      - name: Deploy pages
-        uses: JamesIves/github-pages-deploy-action@v4.2.5
-        with:
-          branch: gh-pages
-          folder: docs/_build/html
+    - 
+      name: Deploy pages
+      uses: JamesIves/github-pages-deploy-action@v4.2.5
+      with:
+        branch: gh-pages
+        folder: docs/_build/html
