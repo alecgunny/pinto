@@ -1,2 +1,0 @@
-.. include:: ../examples/simple-poetry-example/README.md
-    :parser: myst_parser.sphinx_

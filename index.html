@@ -4,7 +4,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Pinto &#8212; Pinto 0.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
@@ -31,8 +32,82 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="pinto">
+  <section id="pinto">
 <h1>Pinto<a class="headerlink" href="#pinto" title="Permalink to this headline">¶</a></h1>
+<section class="tex2jax_ignore mathjax_ignore" id="pinto">
+<h2>Pinto<a class="headerlink" href="#pinto" title="Permalink to this headline">¶</a></h2>
+<p>A command line utility for managing and running jobs in complex Python environments.</p>
+<section id="background">
+<h3>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h3>
+<p>Most ongoing research in the <a class="reference external" href="https://github.com/ML4GW">ML4GW</a> organization leverages <a class="reference external" href="https://python-poetry.org/">Poetry</a> for managing Python virtual environments in the context of a <a class="reference external" href="https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa">Python monorepo</a>. In particular, Poetry makes managing a shared set of libraries between jobs within a project <a class="reference external" href="https://python-poetry.org/docs/dependency-specification/#path-dependencies">simple and straightforward</a>.</p>
+<p>However, several tools in the Python gravitational wave analysis ecosystem can only be installed via Conda (in particular the <a class="reference external" href="https://anaconda.org/conda-forge/python-ldas-tools-framecpp/">library</a> GWpy uses to read and write <code class="docutils literal notranslate"><span class="pre">.gwf</span></code> files and the library it uses for <a class="reference external" href="https://anaconda.org/conda-forge/python-nds2-client">reading archival data from the NDS2 server</a>). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into <em>Conda</em> virtual environments, and others which don’t require Conda at all and can install all the libraries they need into <em>Poetry</em> virtual environments.</p>
+<section id="enter-pinto">
+<h4>Enter: Pinto<a class="headerlink" href="#enter-pinto" title="Permalink to this headline">¶</a></h4>
+<p>Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build /path/to/my/project</span>
+</pre></div>
+</div>
+<p>It can then be used to run jobs inside of that virtual environment.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run /path/to/my/project my-command --arg1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="structuring-a-project-with-pinto">
+<h3>Structuring a project with Pinto<a class="headerlink" href="#structuring-a-project-with-pinto" title="Permalink to this headline">¶</a></h3>
+<p>To leverage Pinto in a project, all you need is the <a class="reference external" href="https://python-poetry.org/docs/pyproject/"><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file</a> required by Poetry which specifies your project’s dependencies. This will treat your project as a “vanilla” Poetry project and manage all of its dependencies inside a Poetry virtual environment.</p>
+<section id="but-what-if-i-need-conda">
+<h4>But what if I need Conda?<a class="headerlink" href="#but-what-if-i-need-conda" title="Permalink to this headline">¶</a></h4>
+<p>Inidicating to Pinto that your project requires Conda is as simple as including a <code class="docutils literal notranslate"><span class="pre">poetry.toml</span></code> file in your project directory with the lines</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[virtualenvs]</span><span class="w"></span>
+<span class="n">create</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Alternatively, from you project directory you can run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry config virtualenvs.create false --local</span>
+</pre></div>
+</div>
+<p>When building your project, Pinto will first look for an entry that looks like</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.pinto]</span><span class="w"></span>
+<span class="n">base_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/path/to/environment.yaml&quot;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In your project’s <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. If this entry doesn’t exist, Pinto will look for a file called either <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> or <code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> starting in your project’s directory, then ascending up your directory tree to the root, using the first file it finds. This way, you can easily have a base <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> in the root of a monorepo from on top of which all your projects build, while leaving projects the option of overriding this base image with their own <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code>.</p>
+<p>In fact, if the <code class="docutils literal notranslate"><span class="pre">name</span></code> listed in the <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> Pinto finds ends with <code class="docutils literal notranslate"><span class="pre">-base</span></code>, it will automatically name your project’s virtual environment <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;-&lt;project-name&gt;</span></code>. For example, if the name of your project (as given in the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>) is <code class="docutils literal notranslate"><span class="pre">nn-trainer</span></code>, and the <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> at the root of your monorepo looks like</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">myproject-base</span><span class="w"></span>
+<span class="nt">dependencies</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+</pre></div>
+</div>
+<p>then Pinto will name your project’s virtual environment <code class="docutils literal notranslate"><span class="pre">myproject-nn-trainer</span></code>.</p>
+<p>To see more examples of project structures, consult the <a class="reference internal" href="examples.html"><span class="doc std std-doc"><code class="docutils literal notranslate"><span class="pre">examples</span></code></span></a> folder.</p>
+</section>
+</section>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<section id="environment-set-up">
+<h4>Environment set up<a class="headerlink" href="#environment-set-up" title="Permalink to this headline">¶</a></h4>
+<p>Pinto requires local versions of both Conda and Poetry.
+First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>).
+Then ensure that you have the latest version of <a class="reference external" href="https://python-poetry.org/">Poetry</a> installed following the instructions <a class="reference external" href="https://python-poetry.org/docs/master/#installing-with-the-official-installer">here</a>, the upshot being that you should just need to run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">curl -sSL https://install.python-poetry.org | python3 - --preview</span>
+</pre></div>
+</div>
+<p>Then from this directory, <strong>and in your <em>base</em> Conda environment</strong>, first make sure that this project will install to your system Python <code class="docutils literal notranslate"><span class="pre">site-packages</span></code> (i.e. the base Conda environment’s <code class="docutils literal notranslate"><span class="pre">site_packages</span></code>), run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry config virtualenvs.create false --local</span>
+</pre></div>
+</div>
+<p>Then simply run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry install</span>
+</pre></div>
+</div>
+<p>or, to install without develop dependencies like pytest and sphinx, run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry install --without dev</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
 <ul>
@@ -41,7 +116,7 @@
 </li>
 </ul>
 </div>
-</div>
+</section>
 
 
           </div>
