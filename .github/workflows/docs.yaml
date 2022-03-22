@@ -23,7 +23,7 @@ jobs:
       uses: sphinx-notes/pages@v2
     -
       name: Check build
-      run: ls docs
+      run: "ls && echo $PWD"
     - 
       name: Push changes
       uses: ad-m/github-push-action@master
