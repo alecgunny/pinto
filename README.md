@@ -6,7 +6,7 @@ Most ongoing research in the [ML4GW](https://github.com/ML4GW) organization leve
 
 However, several tools in the Python gravitational wave analysis ecosystem can only be installed via Conda (in particular the [library](https://anaconda.org/conda-forge/python-ldas-tools-framecpp/) GWpy uses to read and write `.gwf` files and the library it uses for [reading archival data from the NDS2 server](https://anaconda.org/conda-forge/python-nds2-client)). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into _Conda_ virtual environments, and others which don't require Conda at all and can install all the libraries they need into _Poetry_ virtual environments.
 
-### Enter: Pinto
+### Enter: `pinto`
 Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.
 
 ```console
@@ -20,7 +20,7 @@ pinto run /path/to/my/project my-command --arg1
 ```
 
 ## Structuring a project with Pinto
-To leverage Pinto in a project, all you need is the [`pyproject.toml` file](https://python-poetry.org/docs/pyproject/) required by Poetry which specifies your project's dependencies. This will treat your project as a "vanilla" Poetry project and manage all of its dependencies inside a Poetry virtual environment.
+To leverage Pinto in a project, all you need is the [`pyproject.toml` file](https://python-poetry.org/docs/pyproject/) required by Poetry which specifies your project's dependencies. If just this file is present, `pinto` will treat your project as a "vanilla" Poetry project and manage all of its dependencies inside a Poetry virtual environment.
 
 ### But what if I need Conda?
 Inidicating to Pinto that your project requires Conda is as simple as including a `poetry.toml` file in your project directory with the lines
@@ -36,16 +36,16 @@ Alternatively, from you project directory you can run
 poetry config virtualenvs.create false --local
 ```
 
-When building your project, Pinto will first look for an entry that looks like
+When building your project, `pinto` will first look for an entry that looks like
 
 ```toml
 [tool.pinto]
 base_env = "/path/to/environment.yaml"
 ```
 
-In your project's `pyproject.toml`. If this entry doesn't exist, Pinto will look for a file called either `environment.yaml` or `environment.yml` starting in your project's directory, then ascending up your directory tree to the root, using the first file it finds. This way, you can easily have a base `environment.yaml` in the root of a monorepo from on top of which all your projects build, while leaving projects the option of overriding this base image with their own `environment.yaml`.
+In your project's `pyproject.toml`. If this entry doesn't exist, `pinto` will look for a file called either `environment.yaml` or `environment.yml` starting in your project's directory, then ascending up your directory tree to the root, using the first file it finds. This way, you can easily have a base `environment.yaml` in the root of a monorepo from on top of which all your projects build, while leaving projects the option of overriding this base image with their own `environment.yaml`.
 
-In fact, if the `name` listed in the `environment.yaml` Pinto finds ends with `-base`, it will automatically name your project's virtual environment `<prefix>-<project-name>`. For example, if the name of your project (as given in the `pyproject.toml`) is `nn-trainer`, and the `environment.yaml` at the root of your monorepo looks like
+In fact, if the `name` listed in the `environment.yaml` discovered by `pinto` ends with `-base`, `pinto` will automatically name your project's virtual environment `<prefix>-<project-name>`. For example, if the name of your project (as given in the `pyproject.toml`) is `nn-trainer`, and the `environment.yaml` at the root of your monorepo looks like
 
 ```yaml
 name: myproject-base
@@ -53,7 +53,7 @@ dependencies:
     - ...
 ```
 
-then Pinto will name your project's virtual environment `myproject-nn-trainer`.
+then `pinto` will name your project's virtual environment `myproject-nn-trainer`.
 
 To see more examples of project structures, consult the [`examples`](./examples) folder.
 
