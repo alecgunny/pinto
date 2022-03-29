@@ -11,14 +11,9 @@ import yaml
 from conda.core.prefix_data import PrefixData
 
 
-@pytest.fixture
-def config_dir():
-    return Path(__file__).resolve().parent / "configs"
-
-
-@pytest.fixture
-def pyproject(config_dir):
-    return config_dir / "pyproject.toml"
+@pytest.fixture(params=["testlib", "test-lib", "test_lib"])
+def project_name(request):
+    return request.param
 
 
 @pytest.fixture
@@ -32,12 +27,27 @@ def conda_poetry_config():
 
 
 @pytest.fixture
-def project_dir(pyproject):
+def project_dir(project_name):
     project_dir = Path(__file__).resolve().parent / "tmp"
 
+    standardized_name = project_name.replace("-", "_")
+    pyproject = {
+        "tool": {
+            "poetry": {
+                "name": project_name,
+                "version": "0.0.1",
+                "description": "test project",
+                "authors": ["test author <test@testproject.biz>"],
+                "scripts": {"testme": standardized_name + ":main"},
+                "dependencies": {"pip_install_test": "^0.5"},
+            }
+        }
+    }
+
     os.makedirs(project_dir)
-    shutil.copy(pyproject, project_dir)
-    with open(project_dir / "testlib.py", "w") as f:
+    with open(project_dir / "pyproject.toml", "w") as f:
+        toml.dump(pyproject, f)
+    with open(project_dir / (standardized_name + ".py"), "w") as f:
         f.write("def main():\n" "    print('can you hear me?')\n")
 
     yield project_dir
