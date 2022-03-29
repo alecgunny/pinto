@@ -38,7 +38,7 @@ def test_conda_project(
     if not nest:
         assert project._venv.name == "pinto-testenv"
     elif nest == "base":
-        assert project._venv.name == "pinto-testlib"
+        assert project._venv.name == "pinto-" + project.name
     else:
         assert project._venv.name == project.name
 

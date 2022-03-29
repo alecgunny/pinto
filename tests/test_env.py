@@ -7,10 +7,10 @@ from pinto.env import CondaEnvironment, Environment, PoetryEnvironment
 
 
 @pytest.fixture
-def poetry_project(project_dir):
+def poetry_project(project_dir, project_name):
     project = Mock()
     project.path = project_dir
-    project.name = "testlib"
+    project.name = project_name
     return project
 
 
@@ -26,19 +26,19 @@ def nest(request):
 
 
 @pytest.fixture
-def conda_project(complete_conda_project_dir):
+def conda_project(complete_conda_project_dir, project_name):
     project = Mock()
     project.path = complete_conda_project_dir
-    project.name = "testlib"
+    project.name = project_name
     project.pinto_config = {}
     return project
 
 
 @pytest.fixture
-def conda_project_with_no_environment(conda_project_dir):
+def conda_project_with_no_environment(conda_project_dir, project_name):
     project = Mock()
     project.path = conda_project_dir
-    project.name = "testlib"
+    project.name = project_name
     project.pinto_config = {}
     return project
 
@@ -79,7 +79,7 @@ def test_poetry_environment(poetry_project, poetry_env_context):
         assert env.name == venv.path.name
         assert env.name.startswith(
             env._manager.generate_env_name(
-                poetry_project.name, str(poetry_project.path)
+                poetry_project.name.replace("_", "-"), str(poetry_project.path)
             )
         )
 
@@ -114,7 +114,7 @@ def test_conda_environment(
         # if we're using the "<name>-base" syntax,
         # "base" should have been replaced by "testlib"
         if nest == "base":
-            expected_name = "pinto-testlib"
+            expected_name = "pinto-" + conda_project.name
         else:
             # otherwise the project name will be the
             # default environment name
