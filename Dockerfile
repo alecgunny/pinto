@@ -1,4 +1,4 @@
-ARG CONDA_TAG=4.10.3
+ARG CONDA_TAG=4.11.0
 FROM continuumio/miniconda3:${CONDA_TAG}
 
 SHELL ["/bin/bash", "-c"]
