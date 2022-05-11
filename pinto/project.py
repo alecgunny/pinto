@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 import toml
 
@@ -72,7 +72,9 @@ class Project(ProjectBase):
         """The virtual environment associated with this project"""
         return self._venv
 
-    def install(self, force: bool = False) -> None:
+    def install(
+        self, force: bool = False, extras: Optional[Iterable[str]] = None
+    ) -> None:
         """
         Install this project into the virtual environment,
         creating the environment if necessary.
@@ -83,6 +85,8 @@ class Project(ProjectBase):
                 if the project is already installed. Otherwise,
                 if the project is already installed in
                 the environment, log that fact and move on.
+            extras:
+                Groups of extra dependencies to install
         """
 
         if not self._venv.exists():
@@ -97,7 +101,7 @@ class Project(ProjectBase):
                     self.name, self.path, self._venv.name
                 )
             )
-            self._venv.install()
+            self._venv.install(extras=extras)
         elif force:
             logger.info(
                 "Updating project '{}' from '{}' in "
@@ -108,7 +112,7 @@ class Project(ProjectBase):
             # TODO: should we do a `poetry update` rather
             # than install in this case? What does that
             # command look like for the poetry env?
-            self._venv.install()
+            self._venv.install(extras=extras)
         else:
             logger.info(
                 "Project '{}' at '{}' already installed in "

@@ -6,13 +6,17 @@ from pinto.project import Project
 
 
 def test_poetry_project(
-    project_dir, poetry_env_context, installed_project_tests
+    project_dir, poetry_env_context, installed_project_tests, extras
 ):
     project = Project(project_dir)
     assert isinstance(project._venv, PoetryEnvironment)
     assert not project._venv.exists()
 
-    project.install()
+    if extras is None:
+        project.install()
+    else:
+        project.install(extras=["extra"])
+
     with poetry_env_context(project._venv):
         installed_project_tests(project)
 
@@ -30,6 +34,7 @@ def test_conda_project(
     nest,
     conda_env_context,
     installed_project_tests,
+    extras,
 ):
     project = Project(complete_conda_project_dir)
     assert isinstance(project._venv, CondaEnvironment)
@@ -42,7 +47,11 @@ def test_conda_project(
     else:
         assert project._venv.name == project.name
 
-    project.install()
+    if extras is None:
+        project.install()
+    else:
+        project.install(extras=["extra"])
+
     with conda_env_context(project._venv):
         output = project.run(
             "python", "-c", "import requests;print('got it!')"

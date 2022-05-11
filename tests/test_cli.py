@@ -16,10 +16,14 @@ def run_command(cmd):
 
 
 def test_cli_build_poetry(
-    project_dir, poetry_env_context, installed_project_tests
+    project_dir, poetry_env_context, installed_project_tests, extras
 ):
+    cmd = f"pinto build {project_dir}"
+    if extras is not None:
+        cmd += " -E extra"
+    response = run_command(cmd)
+    print(cmd, response)
 
-    run_command(f"pinto build {project_dir}")
     project = Project(project_dir)
     with poetry_env_context(project._venv):
         installed_project_tests(project)

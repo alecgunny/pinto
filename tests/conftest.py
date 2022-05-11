@@ -26,11 +26,17 @@ def conda_poetry_config():
     return {"virtualenvs": {"create": False}}
 
 
+@pytest.fixture(params=[None, "attrs"])
+def extras(request):
+    return request.param
+
+
 @pytest.fixture
-def project_dir(project_name):
+def project_dir(project_name, extras):
     project_dir = Path(__file__).resolve().parent / "tmp"
 
     standardized_name = project_name.replace("-", "_")
+    # TODO: fixture for python version?
     pyproject = {
         "tool": {
             "poetry": {
@@ -39,10 +45,19 @@ def project_dir(project_name):
                 "description": "test project",
                 "authors": ["test author <test@testproject.biz>"],
                 "scripts": {"testme": standardized_name + ":main"},
-                "dependencies": {"pip_install_test": "^0.5"},
+                "dependencies": {
+                    "python": ">=3.9,<3.10",
+                    "pip_install_test": "^0.5",
+                },
             }
         }
     }
+    if extras is not None:
+        pyproject["tool"]["poetry"]["dependencies"][extras] = {
+            "version": "^21.4",
+            "optional": True,
+        }
+        pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
 
     os.makedirs(project_dir)
     with open(project_dir / "pyproject.toml", "w") as f:
@@ -157,17 +172,22 @@ def poetry_env_context():
     return _poetry_env_context
 
 
-def _test_installed_project(project):
-    assert project._venv.exists()
-    assert project._venv.contains(project)
-
-    output = project.run("testme")
-    assert output.rstrip() == "can you hear me?"
-
-    output = project.run("python", "-c", "import pip_install_test")
-    assert output.startswith("Good job!")
-
-
 @pytest.fixture
-def installed_project_tests():
+def installed_project_tests(extras):
+    def _test_installed_project(project):
+        assert project._venv.exists()
+        assert project._venv.contains(project)
+
+        output = project.run("testme")
+        assert output.rstrip() == "can you hear me?"
+
+        output = project.run("python", "-c", "import pip_install_test")
+        assert output.startswith("Good job!")
+
+        if extras is not None:
+            project.run("python", "-c", "import attrs")
+        else:
+            with pytest.raises(Exception):
+                project.run("python", "-c", "import attrs")
+
     return _test_installed_project
