@@ -43,25 +43,37 @@ def conda_project_with_no_environment(conda_project_dir, project_name):
     return project
 
 
-def _test_installed_env(env, project):
-    """Test an environment that has ostensibly installed its project"""
+@pytest.fixture
+def test_installed_env(extras):
+    def _test_installed_env(env, project):
+        """Test an environment that has ostensibly installed its project"""
 
-    # make sure that the `contains` method correctly
-    # reflects the installation status
-    assert env.contains(project)
+        # make sure that the `contains` method correctly
+        # reflects the installation status
+        assert env.contains(project)
 
-    # make sure we can run our `testme` script
-    # and that it produces the appropriate output
-    output = env.run("testme")
-    assert output.rstrip() == "can you hear me?"
+        # make sure we can run our `testme` script
+        # and that it produces the appropriate output
+        output = env.run("testme")
+        assert output.rstrip() == "can you hear me?"
 
-    # now make sure that our dependency
-    # got installed correctly
-    output = env.run("python", "-c", "import pip_install_test")
-    assert output.startswith("Good job!")
+        # now make sure that our dependency
+        # got installed correctly
+        output = env.run("python", "-c", "import pip_install_test")
+        assert output.startswith("Good job!")
+
+        if extras is not None:
+            output = env.run("python", "-c", "import attrs")
+        else:
+            with pytest.raises(Exception):
+                env.run("python", "-c", "import attrs")
+
+    return test_installed_env
 
 
-def test_poetry_environment(poetry_project, poetry_env_context):
+def test_poetry_environment(
+    poetry_project, poetry_env_context, extras, test_installed_env
+):
     # make sure that the __new__ method maps correctly from
     # a project with no "poetry.toml" to a PoetryEnvironment
     env = Environment(poetry_project)
@@ -91,12 +103,17 @@ def test_poetry_environment(poetry_project, poetry_env_context):
 
         # install the project and then run standard
         # tests on the now complete environment
-        env.install()
-        _test_installed_env(env, poetry_project)
+        env.install(extras=extras)
+        test_installed_env(env, poetry_project)
 
 
 def test_conda_environment(
-    conda_project, yaml_extension, nest, conda_env_context
+    conda_project,
+    yaml_extension,
+    nest,
+    conda_env_context,
+    extras,
+    test_installed_env,
 ):
     # make sure that the __new__ method maps correctly from
     # a project with a "poetry.toml" to a CondaEnvironment
@@ -146,8 +163,8 @@ def test_conda_environment(
 
         # now install the test package and run the
         # standard tests on it
-        env.install()
-        _test_installed_env(env, conda_project)
+        env.install(extras=extras)
+        test_installed_env(env, conda_project)
 
 
 def test_conda_environment_with_no_environment_file(

@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
 import yaml
@@ -94,7 +94,7 @@ class PoetryEnvironment(Environment):
         name = project.name.replace("-", "_")
         return self._venv.site_packages.find_distribution(name) is not None
 
-    def install(self, *args) -> None:
+    def install(self, extras: Optional[Iterable[str]] = None) -> None:
         installer = Installer(
             self._io,
             self._venv,
@@ -103,8 +103,12 @@ class PoetryEnvironment(Environment):
             self._poetry.pool,
             self._poetry.config,
         )
+
         installer.update(True)
         installer.use_executor(True)
+        if extras is not None:
+            installer.extras(extras)
+
         installer.run()
 
         builder = EditableBuilder(self._poetry, self._venv, self._io)
@@ -296,10 +300,13 @@ class CondaEnvironment(Environment):
         package_list = _run_conda_command(conda.Commands.LIST, "-n", self.name)
         return regex.search(package_list) is not None
 
-    def install(self):
-        response = self.run(
-            "/bin/bash", "-c", f"cd {self.project.path} && poetry install"
-        )
+    def install(self, extras: Optional[Iterable[str]] = None):
+        cmd = f"cd {self.project.path} && poetry install"
+        if extras is not None:
+            for extra in extras:
+                cmd += f" -E {extra}"
+
+        response = self.run("/bin/bash", "-c", cmd)
 
         # Conda caches calls to `conda list`, so manually update
         # the cache to reflect the newly pip-installed packages

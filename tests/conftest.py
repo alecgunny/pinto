@@ -26,8 +26,13 @@ def conda_poetry_config():
     return {"virtualenvs": {"create": False}}
 
 
+@pytest.fixture(params=[None, ["attrs"]])
+def extras(request):
+    return request.param
+
+
 @pytest.fixture
-def project_dir(project_name):
+def project_dir(project_name, extras):
     project_dir = Path(__file__).resolve().parent / "tmp"
 
     standardized_name = project_name.replace("-", "_")
@@ -43,6 +48,12 @@ def project_dir(project_name):
             }
         }
     }
+    if extras is not None:
+        pyproject["tool"]["poetry"]["dependencies"][extras[0]] = {
+            "version": "^21.4",
+            "optional": True,
+        }
+        pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
 
     os.makedirs(project_dir)
     with open(project_dir / "pyproject.toml", "w") as f:
