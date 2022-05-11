@@ -101,7 +101,7 @@ class Project(ProjectBase):
                     self.name, self.path, self._venv.name
                 )
             )
-            self._venv.install()
+            self._venv.install(extras=extras)
         elif force:
             logger.info(
                 "Updating project '{}' from '{}' in "
