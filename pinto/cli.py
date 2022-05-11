@@ -38,6 +38,13 @@ def main():
     subparser.add_argument(
         "-f", "--force", action="store_true", help="Force rebuild"
     )
+    subparser.add_argument(
+        "-E",
+        "--extras",
+        action="append",
+        type=str,
+        help="Extra dependency groups to install",
+    )
 
     # executing a project allows for additional arbitrary
     # arguments to execute in the project environment,
@@ -93,7 +100,7 @@ def main():
             raise parser.error(f"Unknown arguments {unknown_args}")
 
         project = Project(args.project_path)
-        project.install(args.force)
+        project.install(args.force, extras=args.extras)
 
 
 if __name__ == "__main__":

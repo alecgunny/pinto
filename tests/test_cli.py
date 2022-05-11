@@ -16,7 +16,7 @@ def run_command(cmd):
 
 
 def test_cli_build_poetry(
-    project_dir, poetry_env_context, installed_project_tests
+    project_dir, poetry_env_context, installed_project_tests, extras
 ):
 
     run_command(f"pinto build {project_dir}")

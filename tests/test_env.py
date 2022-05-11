@@ -68,7 +68,7 @@ def test_installed_env(extras):
             with pytest.raises(Exception):
                 env.run("python", "-c", "import attrs")
 
-    return test_installed_env
+    return _test_installed_env
 
 
 def test_poetry_environment(
@@ -103,7 +103,11 @@ def test_poetry_environment(
 
         # install the project and then run standard
         # tests on the now complete environment
-        env.install(extras=extras)
+        if extras is None:
+            env.install()
+        else:
+            env.install(extras=["extra"])
+
         test_installed_env(env, poetry_project)
 
 
@@ -163,7 +167,10 @@ def test_conda_environment(
 
         # now install the test package and run the
         # standard tests on it
-        env.install(extras=extras)
+        if extras is None:
+            env.install()
+        else:
+            env.install(extras=["extra"])
         test_installed_env(env, conda_project)
 
 
