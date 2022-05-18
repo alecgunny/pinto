@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
@@ -14,7 +13,7 @@ class ProjectBase:
     path: str
 
     def __post_init__(self):
-        self.path = Path(os.path.abspath(self.path))
+        self.path = Path(self.path).resolve()
         config_path = self.path / "pyproject.toml"
         try:
             with open(self.path / "pyproject.toml", "r") as f:

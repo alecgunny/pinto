@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Optional
@@ -301,11 +302,15 @@ class CondaEnvironment(Environment):
         return regex.search(package_list) is not None
 
     def install(self, extras: Optional[Iterable[str]] = None):
-        cmd = f"cd {self.project.path} && poetry install"
+        # use poetry binary explicitly since activating
+        # environment may remove location from $PATH
+        poetry_bin = shutil.which("poetry")
+        cmd = f"cd {self.project.path} && {poetry_bin} install"
+
+        # specify any extras and execute command
         if extras is not None:
             for extra in extras:
                 cmd += f" -E {extra}"
-
         response = self.run("/bin/bash", "-c", cmd)
 
         # Conda caches calls to `conda list`, so manually update
