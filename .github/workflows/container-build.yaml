@@ -24,10 +24,11 @@ jobs:
         with:
           context: .
           load: true
-          labels: "${{ env.IMAGE_NAME }}:dev"
+          labels: "pinto:dev"
       -
         name: Run tests in container
-        run: "docker run --rm ${{ env.IMAGE_NAME }}:dev pytest /opt/pinto/tests"
+        run: 
+          docker run --rm pinto:dev pytest /opt/pinto/tests"
 
   # only push the image to the repo if the code
   # has been merged into main and the tests pass
