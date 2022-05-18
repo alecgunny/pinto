@@ -61,11 +61,11 @@ To see more examples of project structures, consult the [`examples`](./examples)
 ## Installation
 ### Environment set up
 Pinto requires local versions of both Conda and Poetry.
-First make sure that you have a _local_ version of Conda installed in your environment (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)).
-Then ensure that you have the latest version of [Poetry](https://python-poetry.org/) installed following the instructions [here](https://python-poetry.org/docs/master/#installing-with-the-official-installer), the upshot being that you should just need to run
+First make sure that you have a _local_ version of Conda installed in your environment (instructions found [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
+Then install Poetry into your base Conda environment via `pip` rather than using the Poetry installer
 
 ```console
-curl -sSL https://install.python-poetry.org | python3 - --preview
+python -m pip install poetry==1.2.0a2
 ```
 
 Then from this directory, **and in your _base_ Conda environment**, first make sure that this project will install to your system Python `site-packages` (i.e. the base Conda environment's `site_packages`), run
