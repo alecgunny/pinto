@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Optional
 
@@ -10,12 +11,15 @@ import yaml
 from cleo.application import Application
 from conda.cli import python_api as conda
 from conda.core.prefix_data import PrefixData
-from poetry.factory import Factory
-from poetry.installation.installer import Installer
-from poetry.masonry.builders import EditableBuilder
-from poetry.utils.env import EnvManager
 
 from pinto.logging import logger
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from poetry.factory import Factory
+    from poetry.installation.installer import Installer
+    from poetry.masonry.builders import EditableBuilder
+    from poetry.utils.env import EnvManager
 
 if TYPE_CHECKING:
     from .project import Project

@@ -5,7 +5,7 @@ However, since this is the first `environment.yaml` climbing up the `src` direct
 Moreover, since the `name` given in `environment.yaml` is `example-base`, ending in `-base`, the name of the environment `pinto-nested-conda-example` will build when you run
 
 ```console
-pinto build src
+pinto -p src build
 ```
 
 is `example-pinto-nested-conda-example` (pardon the tautology), replacing `-base` with the name of the specific project.

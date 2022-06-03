@@ -9,7 +9,7 @@ create = false
 table, as well as the `environment.yaml` that describes the dependencies Conda will be in charge of installing and gives the project's virtual environment its name, `pinto-conda-example`. Therefore, after buildling this project via
 
 ```console
-pinto build .
+pinto build
 ```
 
 you could just as easily activate this environment with Conda
@@ -23,7 +23,7 @@ and do your work inside of there.
 As with any Poetry project, the name given in the `[tool.poetry]` table of the  [`pyproject.toml`](./pyproject.toml) tells Poetry to look for a library (or file in this case) named `pinto_conda_example` to install. The `[tool.poetry.scripts]` table in `pyproject.toml` tells Poetry to install a command line executable named `testme` which executes the `main` function defined in [`pinto_conda_example.py`](./pinto_conda_example.py). So once this project has been built, you can run
 
 ```console
-pinto run . testme
+pinto run testme
 ```
 
 Which should print

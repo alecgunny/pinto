@@ -3,7 +3,7 @@ This directory demonstrates what a simple Pinto project built on top of pure Poe
 
 Building this project only requires running
 ```console
-pinto build .
+pinto build
 ```
 
 which could just as easily be achieved via
@@ -19,7 +19,7 @@ The `[tool.poetry.scripts]` table in `pyproject.toml` tells Poetry to install a 
 So once this project has been built, you can run
 
 ```console
-pinto run . testme
+pinto run testme
 ```
 
 Which should print
@@ -37,7 +37,7 @@ If you wanted to do this _without_ `pinto`, you could always run the command ins
 poetry run testme
 ```
 
-The point once again is that the former requires no prior knowledge from the user as to how exactly this project runs. Moreover, it gives you the freedom to execute this command from _any_ directory, rather than just this one (just replace the `.` in the pinto command above with the path to this directory).
+The point once again is that the former requires no prior knowledge from the user as to how exactly this project runs. Moreover, it gives you the freedom to execute this command from _any_ directory, rather than just this one (just add the flag `-p <path to project>` in the pinto command above).
 
 Also note that `pinto_poetry_example` has been installed as a _library_ in this environment as well, so you could just as easily create a python script which imports it
 

@@ -14,9 +14,12 @@ class ProjectBase:
 
     def __post_init__(self):
         self.path = Path(self.path).resolve()
+        if not self.path.exists():
+            raise ValueError(f"Project {self.path} does not exist")
+
         config_path = self.path / "pyproject.toml"
         try:
-            with open(self.path / "pyproject.toml", "r") as f:
+            with open(config_path, "r") as f:
                 self._config = toml.load(f)
         except FileNotFoundError:
             raise ValueError(

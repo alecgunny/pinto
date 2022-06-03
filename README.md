@@ -10,13 +10,20 @@ However, several tools in the Python gravitational wave analysis ecosystem can o
 Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.
 
 ```console
-pinto build /path/to/my/project
+pinto -p /path/to/my/project build
 ```
 
 It can then be used to run jobs inside of that virtual environment.
 
 ```console
-pinto run /path/to/my/project my-command --arg1
+pinto -p /path/to/my/project run my-command --arg1
+```
+
+If you're currently in the project's directory, you can drop the `-p/--project` flag altogether for any pinto command, e.g.
+
+```console
+pinto build
+pinto run my-command --arg1
 ```
 
 ## Structuring a project with Pinto

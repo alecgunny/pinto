@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pinto"
-version = "0.0.1"
+version = "0.1.0"
 description = "ML4GW environment management utility"
 authors = ["Alec Gunny <alec.gunny@gmail.com>"]
 # readme = "README.md"
