@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Pinto &#8212; Pinto 0.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -44,11 +44,16 @@
 <section id="enter-pinto">
 <h4>Enter: <code class="docutils literal notranslate"><span class="pre">pinto</span></code><a class="headerlink" href="#enter-pinto" title="Permalink to this headline">¶</a></h4>
 <p>Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build /path/to/my/project</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto -p /path/to/my/project build</span>
 </pre></div>
 </div>
 <p>It can then be used to run jobs inside of that virtual environment.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run /path/to/my/project my-command --arg1</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto -p /path/to/my/project run my-command --arg1</span>
+</pre></div>
+</div>
+<p>If you’re currently in the project’s directory, you can drop the <code class="docutils literal notranslate"><span class="pre">-p/--project</span></code> flag altogether for any pinto command, e.g.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build</span>
+<span class="go">pinto run my-command --arg1</span>
 </pre></div>
 </div>
 </section>
@@ -88,9 +93,9 @@
 <section id="environment-set-up">
 <h4>Environment set up<a class="headerlink" href="#environment-set-up" title="Permalink to this headline">¶</a></h4>
 <p>Pinto requires local versions of both Conda and Poetry.
-First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>).
-Then ensure that you have the latest version of <a class="reference external" href="https://python-poetry.org/">Poetry</a> installed following the instructions <a class="reference external" href="https://python-poetry.org/docs/master/#installing-with-the-official-installer">here</a>, the upshot being that you should just need to run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">curl -sSL https://install.python-poetry.org | python3 - --preview</span>
+First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>. I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
+Then install Poetry into your base Conda environment via <code class="docutils literal notranslate"><span class="pre">pip</span></code> rather than using the Poetry installer</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install poetry==1.2.0a2</span>
 </pre></div>
 </div>
 <p>Then from this directory, <strong>and in your <em>base</em> Conda environment</strong>, first make sure that this project will install to your system Python <code class="docutils literal notranslate"><span class="pre">site-packages</span></code> (i.e. the base Conda environment’s <code class="docutils literal notranslate"><span class="pre">site_packages</span></code>), run</p>

@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Simple Conda Example &#8212; Pinto 0.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -41,7 +41,7 @@
 </pre></div>
 </div>
 <p>table, as well as the <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> that describes the dependencies Conda will be in charge of installing and gives the project’s virtual environment its name, <code class="docutils literal notranslate"><span class="pre">pinto-conda-example</span></code>. Therefore, after buildling this project via</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build .</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build</span>
 </pre></div>
 </div>
 <p>you could just as easily activate this environment with Conda</p>
@@ -50,7 +50,7 @@
 </div>
 <p>and do your work inside of there.</p>
 <p>As with any Poetry project, the name given in the <code class="docutils literal notranslate"><span class="pre">[tool.poetry]</span></code> table of the  <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></span> tells Poetry to look for a library (or file in this case) named <code class="docutils literal notranslate"><span class="pre">pinto_conda_example</span></code> to install. The <code class="docutils literal notranslate"><span class="pre">[tool.poetry.scripts]</span></code> table in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> tells Poetry to install a command line executable named <code class="docutils literal notranslate"><span class="pre">testme</span></code> which executes the <code class="docutils literal notranslate"><span class="pre">main</span></code> function defined in <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">pinto_conda_example.py</span></code></span>. So once this project has been built, you can run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run . testme</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run testme</span>
 </pre></div>
 </div>
 <p>Which should print</p>

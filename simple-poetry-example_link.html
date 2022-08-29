@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Simple Poetry Example &#8212; Pinto 0.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -37,7 +37,7 @@
 <h1>Simple Poetry Example<a class="headerlink" href="#simple-poetry-example" title="Permalink to this headline">¶</a></h1>
 <p>This directory demonstrates what a simple Pinto project built on top of pure Poetry might look like. Unlike the Conda examples, no additional requirements beyond a <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></span> with a <code class="docutils literal notranslate"><span class="pre">[tool.poetry]</span></code> table are required.</p>
 <p>Building this project only requires running</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build .</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto build</span>
 </pre></div>
 </div>
 <p>which could just as easily be achieved via</p>
@@ -48,7 +48,7 @@
 <p>As with any Poetry project, the name given in the <code class="docutils literal notranslate"><span class="pre">[tool.poetry]</span></code> table of the  <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></span> tells Poetry to look for a library (or file in this case) named <code class="docutils literal notranslate"><span class="pre">pinto_poetry_example</span></code> to install.
 The <code class="docutils literal notranslate"><span class="pre">[tool.poetry.scripts]</span></code> table in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> tells Poetry to install a command line executable named <code class="docutils literal notranslate"><span class="pre">testme</span></code> which executes the <code class="docutils literal notranslate"><span class="pre">main</span></code> function defined in <span class="xref myst"><code class="docutils literal notranslate"><span class="pre">pinto_poetry_example.py</span></code></span>.
 So once this project has been built, you can run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run . testme</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pinto run testme</span>
 </pre></div>
 </div>
 <p>Which should print</p>
@@ -62,7 +62,7 @@ So once this project has been built, you can run</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry run testme</span>
 </pre></div>
 </div>
-<p>The point once again is that the former requires no prior knowledge from the user as to how exactly this project runs. Moreover, it gives you the freedom to execute this command from <em>any</em> directory, rather than just this one (just replace the <code class="docutils literal notranslate"><span class="pre">.</span></code> in the pinto command above with the path to this directory).</p>
+<p>The point once again is that the former requires no prior knowledge from the user as to how exactly this project runs. Moreover, it gives you the freedom to execute this command from <em>any</em> directory, rather than just this one (just add the flag <code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">&lt;path</span> <span class="pre">to</span> <span class="pre">project&gt;</span></code> in the pinto command above).</p>
 <p>Also note that <code class="docutils literal notranslate"><span class="pre">pinto_poetry_example</span></code> has been installed as a <em>library</em> in this environment as well, so you could just as easily create a python script which imports it</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pinto_poetry_example</span> <span class="kn">import</span> <span class="n">main</span> <span class="k">as</span> <span class="n">pinto_poetry</span>
 
