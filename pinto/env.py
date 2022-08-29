@@ -327,4 +327,19 @@ class CondaEnvironment(Environment):
         return response
 
     def run(self, *args):
-        return _run_conda_command(conda.Commands.RUN, "-n", self.name, *args)
+        try:
+            ld_lib_path = os.environ["LD_LIBRARY_PATH"]
+        except KeyError:
+            ld_lib_path = None
+        else:
+            prefix = os.environ["CONDA_PREFIX"]
+            os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{prefix}/lib"
+
+        try:
+            result = _run_conda_command(
+                conda.Commands.RUN, "-n", self.name, *args
+            )
+        finally:
+            if ld_lib_path is not None:
+                os.environ["LD_LIBRARY_PATH"] = ld_lib_path
+        return result
