@@ -46,7 +46,7 @@ def project_dir(project_name, extras):
                 "authors": ["test author <test@testproject.biz>"],
                 "scripts": {"testme": standardized_name + ":main"},
                 "dependencies": {
-                    "python": ">=3.9,<3.10",
+                    "python": ">=3.9,<3.11",
                     "pip_install_test": "^0.5",
                 },
             }

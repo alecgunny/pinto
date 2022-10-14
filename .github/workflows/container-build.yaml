@@ -25,6 +25,9 @@ jobs:
           context: .
           load: true
           tags: "pinto:dev"
+          build-args: |
+            dev=true
+
       -
         name: Run tests in container
         run: "docker run --rm pinto:dev pytest /opt/pinto/tests"
@@ -61,3 +64,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            dev=false

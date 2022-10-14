@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
-import yaml
 from cleo.application import Application
 from conda.cli import python_api as conda
 from conda.core.prefix_data import PrefixData
@@ -157,9 +156,11 @@ def _env_exists(env_name):
     return env_name in env_names
 
 
-def _load_env_file(env_file):
-    with open(env_file, "r") as f:
-        return yaml.safe_load(f)
+def _get_env_name(env_file):
+    match = re.search("(?m)(?<=^name: ).+", env_file.read_text())
+    if match is None:
+        raise ValueError(f"Environment file {env_file} has no 'name' field.")
+    return match.group(0)
 
 
 @dataclass
@@ -186,7 +187,7 @@ class CondaEnvironment(Environment):
                     environment_file = env_dir / ("environment." + suffix)
                     if environment_file.exists():
                         self._base_env = environment_file
-                        env_name = _load_env_file(environment_file)["name"]
+                        env_name = _get_env_name(environment_file)
 
                         # if this environment file live's in the
                         # project's directory, then take it as
@@ -226,7 +227,7 @@ class CondaEnvironment(Environment):
             # environment file
             if _is_yaml(base_env):
                 # load the file and get the name of the associated environment
-                env_name = _load_env_file(base_env)["name"]
+                env_name = _get_env_name(base_env)
             else:
                 # otherwise assume its specifying an environment by name
                 env_name = base_env
@@ -251,7 +252,7 @@ class CondaEnvironment(Environment):
         # file, load in the yaml file to check if the
         # environment already exists
         if _is_yaml(self._base_env):
-            env_name = _load_env_file(self._base_env)["name"]
+            env_name = _get_env_name(self._base_env)
 
             # if the environment doesn't exist yet, create it
             # using the indicated environnment file

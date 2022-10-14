@@ -4,7 +4,7 @@ A command line utility for managing and running jobs in complex Python environme
 ## Background
 Most ongoing research in the [ML4GW](https://github.com/ML4GW) organization leverages [Poetry](https://python-poetry.org/) for managing Python virtual environments in the context of a [Python monorepo](https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa). In particular, Poetry makes managing a shared set of libraries between jobs within a project [simple and straightforward](https://python-poetry.org/docs/dependency-specification/#path-dependencies).
 
-However, several tools in the Python gravitational wave analysis ecosystem can only be installed via Conda (in particular the [library](https://anaconda.org/conda-forge/python-ldas-tools-framecpp/) GWpy uses to read and write `.gwf` files and the library it uses for [reading archival data from the NDS2 server](https://anaconda.org/conda-forge/python-nds2-client)). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into _Conda_ virtual environments, and others which don't require Conda at all and can install all the libraries they need into _Poetry_ virtual environments.
+However, several tools in the Python gravitational wave analysis ecosystem cannot be installed via Pip (in particular the [library](https://anaconda.org/conda-forge/python-ldas-tools-framecpp/) GWpy uses to read and write `.gwf` files and the library it uses for [reading archival data from the NDS2 server](https://anaconda.org/conda-forge/python-nds2-client)). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into _Conda_ virtual environments, and others which don't require Conda at all and can install all the libraries they need into _Poetry_ virtual environments.
 
 ### Enter: `pinto`
 Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.
@@ -72,23 +72,27 @@ First make sure that you have a _local_ version of Conda installed in your envir
 Then install Poetry into your base Conda environment via `pip` rather than using the Poetry installer
 
 ```console
-python -m pip install poetry==1.2.0a2
+(base) ~$ python -m pip install "poetry>1.2.0"
 ```
 
-Then from this directory, **and in your _base_ Conda environment**, first make sure that this project will install to your system Python `site-packages` (i.e. the base Conda environment's `site_packages`), run
+### Install
+You can install `pinto` in your base Conda environment with pip, either by pointing at this GitHub repo
 
 ```console
-poetry config virtualenvs.create false --local
+(base) ~$ python -m pip install git+https://github.com/ML4GW/pinto.git
 ```
 
-Then simply run
+or by cloning this repo and pip installing it locally
 
-```console
-poetry install
+```
+(base) ~$ git clone https://github.com/ML4GW/pinto.git
+(base) ~$ python -m pip install pinto
 ```
 
-or, to install without develop dependencies like pytest and sphinx, run
+### Development Installation
+The best way to install `pinto` for development is to clone this repo and perform an editable installation with the development dependencies included:
 
-```console
-poetry install --without dev
+```
+(base) ~$ git clone https://github.com/ML4GW/pinto.git
+(base) ~$ python -m pip install -e pinto[dev]
 ```

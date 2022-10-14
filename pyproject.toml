@@ -12,16 +12,8 @@ pinto = "pinto.cli:main"
 python = "^3.8,<3.10"
 toml = "^0.10"
 
-# include these pip dependencies so that dev
-# dependency installation doesn't update any
-# of the required packages beyond the supported
-# versions
-poetry = "1.2.0a2"
-
-# see https://github.com/python-poetry/poetry/issues/4264
-packaging = "<21.0"
-
 [tool.poetry.group.dev.dependencies]
+pip = "^21.3"
 pre-commit = "^2.16"
 pytest = "^6.2"
 Sphinx = "^4.4.0"
@@ -46,8 +38,5 @@ multi_line_output = 3
 include_trailing_comma = true
 
 [build-system]
-# still require poetry and conda here to
-# ensure that the relevant packages can
-# be installed in the base environment
-requires = ["poetry>=1.2", "conda>4.2"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry>=1.2.0", "conda>4.2"]
+build-backend = "poetry.core.masonry.api"
