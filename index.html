@@ -40,7 +40,7 @@
 <section id="background">
 <h3>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h3>
 <p>Most ongoing research in the <a class="reference external" href="https://github.com/ML4GW">ML4GW</a> organization leverages <a class="reference external" href="https://python-poetry.org/">Poetry</a> for managing Python virtual environments in the context of a <a class="reference external" href="https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa">Python monorepo</a>. In particular, Poetry makes managing a shared set of libraries between jobs within a project <a class="reference external" href="https://python-poetry.org/docs/dependency-specification/#path-dependencies">simple and straightforward</a>.</p>
-<p>However, several tools in the Python gravitational wave analysis ecosystem can only be installed via Conda (in particular the <a class="reference external" href="https://anaconda.org/conda-forge/python-ldas-tools-framecpp/">library</a> GWpy uses to read and write <code class="docutils literal notranslate"><span class="pre">.gwf</span></code> files and the library it uses for <a class="reference external" href="https://anaconda.org/conda-forge/python-nds2-client">reading archival data from the NDS2 server</a>). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into <em>Conda</em> virtual environments, and others which don’t require Conda at all and can install all the libraries they need into <em>Poetry</em> virtual environments.</p>
+<p>However, several tools in the Python gravitational wave analysis ecosystem cannot be installed via Pip (in particular the <a class="reference external" href="https://anaconda.org/conda-forge/python-ldas-tools-framecpp/">library</a> GWpy uses to read and write <code class="docutils literal notranslate"><span class="pre">.gwf</span></code> files and the library it uses for <a class="reference external" href="https://anaconda.org/conda-forge/python-nds2-client">reading archival data from the NDS2 server</a>). This complicates the environment management picture by having some projects which use Poetry to install local libraries as well as their own code into <em>Conda</em> virtual environments, and others which don’t require Conda at all and can install all the libraries they need into <em>Poetry</em> virtual environments.</p>
 <section id="enter-pinto">
 <h4>Enter: <code class="docutils literal notranslate"><span class="pre">pinto</span></code><a class="headerlink" href="#enter-pinto" title="Permalink to this headline">¶</a></h4>
 <p>Pinto  attempts to simplify this picture by installing a single tool in the base Conda environment which can dynamically detect whether a project requires Conda, create the appropriate virtual environment, and install all necessary libraries into it.</p>
@@ -95,19 +95,27 @@
 <p>Pinto requires local versions of both Conda and Poetry.
 First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>. I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
 Then install Poetry into your base Conda environment via <code class="docutils literal notranslate"><span class="pre">pip</span></code> rather than using the Poetry installer</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install poetry==1.2.0a2</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install &quot;poetry&gt;1.2.0&quot;</span>
 </pre></div>
 </div>
-<p>Then from this directory, <strong>and in your <em>base</em> Conda environment</strong>, first make sure that this project will install to your system Python <code class="docutils literal notranslate"><span class="pre">site-packages</span></code> (i.e. the base Conda environment’s <code class="docutils literal notranslate"><span class="pre">site_packages</span></code>), run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry config virtualenvs.create false --local</span>
+</section>
+<section id="install">
+<h4>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h4>
+<p>You can install <code class="docutils literal notranslate"><span class="pre">pinto</span></code> in your base Conda environment with pip, either by pointing at this GitHub repo</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install git+https://github.com/ML4GW/pinto.git</span>
 </pre></div>
 </div>
-<p>Then simply run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry install</span>
+<p>or by cloning this repo and pip installing it locally</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(base) ~$ git clone https://github.com/ML4GW/pinto.git
+(base) ~$ python -m pip install pinto
 </pre></div>
 </div>
-<p>or, to install without develop dependencies like pytest and sphinx, run</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">poetry install --without dev</span>
+</section>
+<section id="development-installation">
+<h4>Development Installation<a class="headerlink" href="#development-installation" title="Permalink to this headline">¶</a></h4>
+<p>The best way to install <code class="docutils literal notranslate"><span class="pre">pinto</span></code> for development is to clone this repo and perform an editable installation with the development dependencies included:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(base) ~$ git clone https://github.com/ML4GW/pinto.git
+(base) ~$ python -m pip install -e pinto[dev]
 </pre></div>
 </div>
 </section>
