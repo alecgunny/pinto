@@ -32,48 +32,62 @@ def extras(request):
 
 
 @pytest.fixture
-def project_dir(project_name, extras):
-    project_dir = Path(__file__).resolve().parent / "tmp"
+def make_project_dir(conda_poetry_config):
+    def f(project_name, extras=None, conda=False, subdir=False):
+        project_dir = Path(__file__).resolve().parent / "tmp"
+        if subdir:
+            project_dir /= project_name
 
-    standardized_name = project_name.replace("-", "_")
-    # TODO: fixture for python version?
-    pyproject = {
-        "tool": {
-            "poetry": {
-                "name": project_name,
-                "version": "0.0.1",
-                "description": "test project",
-                "authors": ["test author <test@testproject.biz>"],
-                "scripts": {"testme": standardized_name + ":main"},
-                "dependencies": {
-                    "python": ">=3.9,<3.11",
-                    "pip_install_test": "^0.5",
-                },
+        standardized_name = project_name.replace("-", "_")
+        # TODO: fixture for python version?
+        pyproject = {
+            "tool": {
+                "poetry": {
+                    "name": project_name,
+                    "version": "0.0.1",
+                    "description": "test project",
+                    "authors": ["test author <test@testproject.biz>"],
+                    "scripts": {"testme": standardized_name + ":main"},
+                    "dependencies": {
+                        "python": ">=3.9,<3.11",
+                        "pip_install_test": "^0.5",
+                    },
+                }
             }
         }
-    }
-    if extras is not None:
-        pyproject["tool"]["poetry"]["dependencies"][extras] = {
-            "version": "^21.4",
-            "optional": True,
-        }
-        pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
+        if extras is not None:
+            pyproject["tool"]["poetry"]["dependencies"][extras] = {
+                "version": "^21.4",
+                "optional": True,
+            }
+            pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
 
-    os.makedirs(project_dir)
-    with open(project_dir / "pyproject.toml", "w") as f:
-        toml.dump(pyproject, f)
-    with open(project_dir / (standardized_name + ".py"), "w") as f:
-        f.write("def main():\n" "    print('can you hear me?')\n")
+        os.makedirs(project_dir)
+        with open(project_dir / "pyproject.toml", "w") as f:
+            toml.dump(pyproject, f)
+        with open(project_dir / (standardized_name + ".py"), "w") as f:
+            f.write("def main():\n" "    print('can you hear me?')\n")
 
+        if conda:
+            with open(project_dir / "poetry.toml", "w") as f:
+                toml.dump(conda_poetry_config, f)
+        return project_dir
+
+    return f
+
+
+@pytest.fixture
+def project_dir(make_project_dir, project_name, extras):
+    project_dir = make_project_dir(project_name, extras)
     yield project_dir
     shutil.rmtree(project_dir)
 
 
 @pytest.fixture
-def conda_project_dir(project_dir, conda_poetry_config):
-    with open(project_dir / "poetry.toml", "w") as f:
-        toml.dump(conda_poetry_config, f)
-    return project_dir
+def conda_project_dir(make_project_dir, project_name, extras):
+    project_dir = make_project_dir(project_name, extras, True)
+    yield project_dir
+    shutil.rmtree(project_dir)
 
 
 @pytest.fixture(params=["yaml", "yml"])
@@ -154,14 +168,6 @@ def _conda_env_context(env, nest):
                 pass
 
 
-@contextmanager
-def _poetry_env_context(env):
-    try:
-        yield
-    finally:
-        shutil.rmtree(env.env_root)
-
-
 @pytest.fixture
 def conda_env_context(nest):
     return partial(_conda_env_context, nest=nest)
@@ -169,25 +175,84 @@ def conda_env_context(nest):
 
 @pytest.fixture
 def poetry_env_context():
-    return _poetry_env_context
+    @contextmanager
+    def ctx(env):
+        try:
+            yield
+        finally:
+            shutil.rmtree(env.env_root)
+
+    return ctx
 
 
 @pytest.fixture
-def installed_project_tests(extras):
+def installed_project_tests(extras, capfd):
     def _test_installed_project(project):
         assert project._venv.exists()
         assert project._venv.contains(project)
 
-        output = project.run("testme")
-        assert output.rstrip() == "can you hear me?"
+        project.run("testme")
+        output = capfd.readouterr()
+        assert output.out.endswith("can you hear me?\n")
 
-        output = project.run("python", "-c", "import pip_install_test")
-        assert output.startswith("Good job!")
+        project.run("python", "-c", "import pip_install_test")
+        output = capfd.readouterr()
+        assert output.out.startswith("Good job!")
 
         if extras is not None:
             project.run("python", "-c", "import attrs")
         else:
-            with pytest.raises(Exception):
+            with pytest.raises(SystemExit):
                 project.run("python", "-c", "import attrs")
 
     return _test_installed_project
+
+
+@pytest.fixture(params=[None, ".env", ".other-env"], scope="function")
+def dotenv(request):
+    return request.param
+
+
+@pytest.fixture
+def validate_dotenv(dotenv, capfd):
+    def f(project):
+        script = """
+            import os
+            print(os.environ['ENVARG1'])
+            print(os.environ['ENVARG2'])
+        """
+        script = "\n".join([i.strip() for i in script.splitlines()])
+
+        if dotenv != ".env":
+            # if there's no .env, pinto won't know to look for one
+            # and so the environment variables should not get set
+            with pytest.raises(SystemExit):
+                project.run("python", "-c", script)
+            stderr = capfd.readouterr().err
+            assert "KeyError" in stderr
+
+            # if there is an env file, just not one called .env,
+            # we can specify explicitly via the `env` argument
+            if dotenv is not None:
+                env = str(project.path / dotenv)
+                project.run("python", "-c", script, env=env)
+                stdout = capfd.readouterr().out
+                assert stdout == "thom\nthom-yorke\n"
+        elif dotenv == ".env":
+            # if there is a .env file, we shouldn't need to
+            # specify anything: pinto will pick it up on its own
+            project.run("python", "-c", script)
+            stdout = capfd.readouterr().out
+            assert stdout.endswith("thom\nthom-yorke\n")
+
+    return f
+
+
+@pytest.fixture
+def write_dotenv(dotenv):
+    def f(project_dir):
+        if dotenv is not None:
+            with open(project_dir / dotenv, "w") as f:
+                f.write("ENVARG1=thom\nENVARG2=${ENVARG1}-yorke\n")
+
+    return f

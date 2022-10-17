@@ -1,8 +1,10 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Dict, Iterable, Optional
 
 import toml
+from dotenv import load_dotenv
 
 from pinto.env import Environment
 from pinto.logging import logger
@@ -30,8 +32,16 @@ class ProjectBase:
             )
 
     @property
-    def config(self):
+    def config(self) -> Dict:
         return self._config.copy()
+
+    def load_dotenv(self, env: Optional[str] = None) -> None:
+        if env is None or not os.path.isabs(env):
+            env = env or ".env"
+            env = self.path / env
+
+        if os.path.exists(env):
+            load_dotenv(env)
 
 
 @dataclass
@@ -123,7 +133,7 @@ class Project(ProjectBase):
                 )
             )
 
-    def run(self, *args: str) -> str:
+    def run(self, *args: str, **kwargs: Any) -> str:
         """Run a command in the project's virtual environment
 
         Run an individual command in the project's
@@ -157,9 +167,11 @@ class Project(ProjectBase):
 
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
+        self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")
-        return self._venv.run(*args)
+        response = self._venv.run(*args)
+        return response
 
 
 @dataclass
@@ -194,7 +206,9 @@ class Pipeline(ProjectBase):
     def create_project(self, name):
         return Project(self.path / name)
 
-    def run(self):
+    def run(self, env: Optional[str] = None):
+        self.load_dotenv(env)
+
         for step in self.steps:
             logger.debug(f"Parsing pipeline step {step}")
 
@@ -212,7 +226,10 @@ class Pipeline(ProjectBase):
             logger.info(stdout)
 
     def run_step(
-        self, project: Project, command: str, subcommand: Optional[str] = None
+        self,
+        project: Project,
+        command: str,
+        subcommand: Optional[str] = None,
     ):
         typeo_arg = str(self.path)
         try:
@@ -225,4 +242,12 @@ class Pipeline(ProjectBase):
             if subcommand is not None:
                 typeo_arg += ":" + subcommand
 
-        project.run(command, "--typeo", typeo_arg)
+        # override the project's load_dotenv method
+        # so that it won't attempt to load any local
+        # environment file it might have
+        method = project.load_dotenv
+        project.load_dotenv = lambda env: None
+        try:
+            project.run(command, "--typeo", typeo_arg)
+        finally:
+            project.load_dotenv = method

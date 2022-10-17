@@ -4,6 +4,7 @@ import os
 import re
 import sys
 from collections import OrderedDict
+from pathlib import Path
 from typing import List
 
 from pinto import __version__
@@ -69,6 +70,15 @@ class RunCommand(Command):
     """
 
     @classmethod
+    def add_arguments(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-e",
+            "--environment",
+            type=Path,
+            help="Path to file specifying environment variables for run",
+        )
+
+    @classmethod
     def run(cls, flags: argparse.Namespace, extra_args: List[str]) -> None:
         # first see if the project_path is to a single project
         try:
@@ -92,7 +102,7 @@ class RunCommand(Command):
                     )
 
                 # execute the pipeline
-                pipeline.run()
+                pipeline.run(env=flags.environment)
             else:
                 # otherwise this is some other KeyError, raise it
                 raise
@@ -103,8 +113,7 @@ class RunCommand(Command):
             if len(extra_args) == 0:
                 raise ValueError("Must provide a command to run!")
 
-            stdout = project.run(*extra_args)
-            logger.info(stdout)
+            project.run(*extra_args, env=flags.environment)
 
 
 class BuildCommand(Command):

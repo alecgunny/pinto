@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 
 import pytest
@@ -86,3 +87,46 @@ def test_cli_run_poetry(project_dir, project_flag, poetry_env_context):
         if project._venv.exists():
             with poetry_env_context(project._venv):
                 pass
+
+
+def test_cli_run_with_dotenv(
+    make_project_dir, poetry_env_context, write_dotenv, dotenv
+):
+    project_dir = make_project_dir("testlib", None, False)
+    write_dotenv(project_dir)
+
+    py_cmd = (
+        "import os;print(os.environ['ENVARG1']);print(os.environ['ENVARG2'])"
+    )
+    py_cmd = f'"{py_cmd}"'
+    pinto_cmd = f"pinto -v -p {project_dir} run"
+
+    try:
+        if dotenv != ".env":
+            # if there's no .env, pinto won't know to look for one
+            # and so the environment variables should not get set
+            cmd = f"{pinto_cmd} python -c {py_cmd}"
+            with pytest.raises(RuntimeError) as exc_info:
+                run_command(cmd)
+            assert "KeyError" in str(exc_info.value)
+
+            # if there is an env file, just not one called .env,
+            # we can specify explicitly via the `env` argument
+            if dotenv is not None:
+                env = project_dir / dotenv
+                cmd = f"{pinto_cmd} -e {env} python -c {py_cmd}"
+                output = run_command(cmd)
+                assert output.endswith("thom\nthom-yorke\n")
+        else:
+            # if there is a .env file, we shouldn't need to
+            # specify anything: pinto will pick it up on its own
+            cmd = f"{pinto_cmd} python -c {py_cmd}"
+            output = run_command(cmd)
+            assert output.endswith("thom\nthom-yorke\n")
+    finally:
+        project = Project(project_dir)
+        if project._venv.exists():
+            with poetry_env_context(project._venv):
+                pass
+
+        shutil.rmtree(project_dir)

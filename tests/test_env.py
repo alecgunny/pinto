@@ -44,8 +44,8 @@ def conda_project_with_no_environment(conda_project_dir, project_name):
 
 
 @pytest.fixture
-def test_installed_env(extras):
-    def _test_installed_env(env, project):
+def test_installed_env(extras, capfd):
+    def f(env, project):
         """Test an environment that has ostensibly installed its project"""
 
         # make sure that the `contains` method correctly
@@ -54,25 +54,29 @@ def test_installed_env(extras):
 
         # make sure we can run our `testme` script
         # and that it produces the appropriate output
-        output = env.run("testme")
-        assert output.rstrip() == "can you hear me?"
+        env.run("testme")
+        output = capfd.readouterr().out
+        assert output == "can you hear me?\n"
 
         # now make sure that our dependency
         # got installed correctly
-        output = env.run("python", "-c", "import pip_install_test")
+        env.run("python", "-c", "import pip_install_test")
+        output = capfd.readouterr().out
         assert output.startswith("Good job!")
 
         if extras is not None:
-            output = env.run("python", "-c", "import attrs")
+            env.run("python", "-c", "import attrs")
         else:
-            with pytest.raises(Exception):
+            with pytest.raises(SystemExit):
                 env.run("python", "-c", "import attrs")
+            stderr = capfd.readouterr().err
+            assert "ModuleNotFoundError" in stderr
 
-    return _test_installed_env
+    return f
 
 
 def test_poetry_environment(
-    poetry_project, poetry_env_context, extras, test_installed_env
+    poetry_project, poetry_env_context, extras, test_installed_env, capfd
 ):
     # make sure that the __new__ method maps correctly from
     # a project with no "poetry.toml" to a PoetryEnvironment
@@ -108,6 +112,7 @@ def test_poetry_environment(
         else:
             env.install(extras=["extra"])
 
+        capfd.readouterr()  # clear the stdout buffer
         test_installed_env(env, poetry_project)
 
 
@@ -118,6 +123,7 @@ def test_conda_environment(
     conda_env_context,
     extras,
     test_installed_env,
+    capfd,
 ):
     # make sure that the __new__ method maps correctly from
     # a project with a "poetry.toml" to a CondaEnvironment
@@ -146,7 +152,7 @@ def test_conda_environment(
     assert env.path == expected_path
     assert not env.exists()
     assert env.name == expected_name
-    assert env._base_env == expected_env
+    assert env.base_env == expected_env
 
     # now create the environment, then run all
     # the tests in a context so that it gets
@@ -162,8 +168,9 @@ def test_conda_environment(
         # make sure that we can import the dependency
         # listed in our _conda_ environment file, and
         # that the `run` method works properly
-        output = env.run("python", "-c", "import requests;print('got it!')")
-        assert output.rstrip() == "got it!"
+        env.run("python", "-c", "import requests;print('got it!')")
+        output = capfd.readouterr().out
+        assert output == "got it!\n"
 
         # now install the test package and run the
         # standard tests on it
@@ -171,6 +178,8 @@ def test_conda_environment(
             env.install()
         else:
             env.install(extras=["extra"])
+
+        capfd.readouterr()  # clear the stdout buffer
         test_installed_env(env, conda_project)
 
 

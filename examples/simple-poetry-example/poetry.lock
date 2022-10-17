@@ -9,10 +9,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "*"
-content-hash = "242b994e47286b465d0046bb51c81bed4374654a6b352a00110ed62db62d8c62"
+content-hash = "ab6777d144fb815c824a394fdbb4df8008af75cd1b0b6a486e9eaf50e3fa32d6"
 
 [metadata.files]
-pip-install-test = [
-    {file = "pip-install-test-0.5.tar.gz", hash = "sha256:c33c46ced9865b59963e86e54901947520bdb73bf91849cddbb000742598bb67"},
-    {file = "pip_install_test-0.5-py3-none-any.whl", hash = "sha256:623887f5ce0b4695ec3c0503aa4f394253a403e2bb952417b3a778f0802dbe0b"},
-]
+pip-install-test = []

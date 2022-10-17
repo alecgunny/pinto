@@ -2,8 +2,10 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
@@ -118,20 +120,21 @@ class PoetryEnvironment(Environment):
         builder = EditableBuilder(self._poetry, self._venv, self._io)
         builder.build()
 
-    def run(self, *args):
-        try:
-            return self._venv.run(*args)
-        except Exception as e:
-            raise RuntimeError(
-                "Executing command {} in poetry environment {} "
-                "failed with error:\n{}".format(
-                    args, self._venv.path.name, str(e)
-                )
-            )
+    def run(self, bin: str, *args: str) -> None:
+        """
+        Recycling some of the code from Poetry's Env.execute
+        method, but without calling os.execvpe which replaces
+        the process and prevents testing/pipeline execution
+        """
+        command = self._venv.get_command_from_bin(bin) + list(args)
+        env = dict(os.environ)
+        exe = subprocess.Popen(
+            [command[0]] + command[1:], env=env, shell=False
+        )
+        exe.communicate()
 
-
-def _is_yaml(fname):
-    return re.search(r"\.((yml)|(yaml))$", str(fname)) is not None
+        if exe.returncode:
+            sys.exit(exe.returncode)
 
 
 def _run_conda_command(*args):
@@ -143,10 +146,19 @@ def _run_conda_command(*args):
         raise RuntimeError("System exit raised!")
 
     if exit_code:
-        raise RuntimeError(
-            "Executing command {} failed with error:\n{}".format(args, stderr)
-        )
+        sys.exit(exit_code)
     return stdout
+
+
+_base_pattern = re.compile("(?<=-)base$")
+
+
+def _is_yaml(fname):
+    return Path(fname).suffix in (".yml", ".yaml")
+
+
+def _normalize_env_name(env_name, project_name):
+    return _base_pattern.sub(project_name, env_name)
 
 
 def _env_exists(env_name):
@@ -156,7 +168,7 @@ def _env_exists(env_name):
     return env_name in env_names
 
 
-def _get_env_name(env_file):
+def _read_env_name(env_file):
     match = re.search("(?m)(?<=^name: ).+", env_file.read_text())
     if match is None:
         raise ValueError(f"Environment file {env_file} has no 'name' field.")
@@ -176,68 +188,56 @@ class CondaEnvironment(Environment):
             # dependencies on top of
             base_env = self.project.pinto_config["base_env"]
         except KeyError:
-            # if conda environment is not specified, begin
-            # looking for an `environment.yaml` in every
-            # directory going up to the root level from the
-            # project directory, taking the first environment.yaml
-            # we can find
-            env_dir = self.path
-            while True:
-                for suffix in ["yaml", "yml"]:
-                    environment_file = env_dir / ("environment." + suffix)
-                    if environment_file.exists():
-                        self._base_env = environment_file
-                        env_name = _get_env_name(environment_file)
-
-                        # if this environment file live's in the
-                        # project's directory, then take it as
-                        # the intended environment name
-                        if env_dir == self.path:
-                            self.name = env_name
-                        else:
-                            # otherwise if an environment file in
-                            # the directory tree has a name ending
-                            # in "-base", replace the "base" part
-                            # with the name of the project
-                            if env_name.endswith("-base"):
-                                self.name = re.sub(
-                                    "base$", self.project.name, env_name
-                                )
-                            else:
-                                # otherwise use the name of the project
-                                # as the name of the virtual environment
-                                self.name = self.project.name
-                        break
-                else:
-                    # if we've hit the root level, we don't know
-                    # what environment to use so raise an error
-                    if env_dir.parent == env_dir:
-                        raise ValueError(
-                            "No environment file in directory tree "
-                            "of project {}".format(self.project.path)
-                        )
-
-                    # otherwise move up to the next directory
-                    env_dir = env_dir.parent
-                    continue
-                break
+            base_env, env_name = self._look_for_environment_file()
         else:
-            # if the pyproject specified an environment,
-            # first check if what is specified is an
-            # environment file
             if _is_yaml(base_env):
-                # load the file and get the name of the associated environment
-                env_name = _get_env_name(base_env)
+                # see if the specified env is actually an environment yaml
+                env_name = _read_env_name(base_env)
             else:
-                # otherwise assume its specifying an environment by name
+                # otherwise assume it's specifying an environment by name
                 env_name = base_env
+            env_name = _normalize_env_name(env_name, self.project.name)
 
-            if env_name.endswith("-base"):
-                self.name = re.sub("base$", self.project.name, env_name)
+        self.base_env, self.name = base_env, env_name
+
+    def _look_for_environment_file(self):
+        # if conda environment is not specified, begin
+        # looking for an `environment.yaml` in every directory
+        # going up to the root level from the project directory,
+        # taking the first environment.yaml we can find
+        env_dir = self.path / "*"
+        while env_dir.parent != env_dir:
+            env_dir = env_dir.parent
+
+            # try both yaml suffixes for generality
+            for suffix in ["yaml", "yml"]:
+                base_env = env_dir / f"environment.{suffix}"
+                if base_env.exists():
+                    break
             else:
-                self.name = self.project.name
+                # the for-loop never broke, so neither
+                # suffix exists at this level, move on
+                # up to the next one
+                continue
+            break
+        else:
+            # if we've hit the root level, we don't know
+            # what environment to use so raise an error
+            raise ValueError(
+                "No environment file in directory tree "
+                "of project {}".format(self.project.path)
+            )
 
-            self._base_env = base_env
+        env_name = _read_env_name(base_env)
+        if env_dir != self.path:
+            # if this environment file doesn't live
+            # in the project's directory, then take
+            # it as the intended environment name
+            if _base_pattern.search(env_name) is not None:
+                env_name = _normalize_env_name(env_name, self.project.name)
+            else:
+                env_name = self.project.name
+        return base_env, env_name
 
     def exists(self):
         return _env_exists(self.name)
@@ -249,23 +249,22 @@ class CondaEnvironment(Environment):
             return
 
         # if the base environment is specified as a yaml
-        # file, load in the yaml file to check if the
-        # environment already exists
-        if _is_yaml(self._base_env):
-            env_name = _get_env_name(self._base_env)
+        # file, check the name to see if it exists
+        if _is_yaml(self.base_env):
+            env_name = _read_env_name(self.base_env)
 
             # if the environment doesn't exist yet, create it
             # using the indicated environnment file
             if not _env_exists(env_name):
                 logger.info(
                     "Creating conda environment {} "
-                    "from environment file {}".format(env_name, self._base_env)
+                    "from environment file {}".format(env_name, self.base_env)
                 )
 
                 # unfortunately the conda python api doesn't support
                 # creating from an environment file, so call this
                 # subprocess manually
-                conda_cmd = f"conda env create -f {self._base_env}"
+                conda_cmd = f"conda env create -f {self.base_env}"
                 response = subprocess.run(
                     conda_cmd, shell=True, capture_output=True, text=True
                 )
@@ -283,7 +282,7 @@ class CondaEnvironment(Environment):
             if env_name == self.name:
                 return
         else:
-            env_name = self._base_env
+            env_name = self.base_env
 
         if not _env_exists(env_name):
             raise ValueError(f"No base Conda environment {env_name} to clone")
@@ -295,10 +294,9 @@ class CondaEnvironment(Environment):
                 self.name, env_name
             )
         )
-        stdout = _run_conda_command(
+        _run_conda_command(
             conda.Commands.CREATE, "-n", self.name, "--clone", env_name
         )
-        logger.info(stdout)
 
     def contains(self, project: "Project") -> bool:
         project_name = project.name.replace("_", "-")
@@ -316,7 +314,7 @@ class CondaEnvironment(Environment):
         if extras is not None:
             for extra in extras:
                 cmd += f" -E {extra}"
-        response = self.run("/bin/bash", "-c", cmd)
+        self.run("/bin/bash", "-c", cmd)
 
         # Conda caches calls to `conda list`, so manually update
         # the cache to reflect the newly pip-installed packages
@@ -325,22 +323,21 @@ class CondaEnvironment(Environment):
         except KeyError:
             pass
 
-        return response
-
-    def run(self, *args):
-        try:
-            ld_lib_path = os.environ["LD_LIBRARY_PATH"]
-        except KeyError:
-            ld_lib_path = None
-        else:
+    def run(self, bin: str, *args: str) -> None:
+        ld_lib_path = os.environ.get("LD_LIBRARY_PATH")
+        if ld_lib_path is not None:
             prefix = os.environ["CONDA_PREFIX"]
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{prefix}/lib"
 
         try:
-            result = _run_conda_command(
-                conda.Commands.RUN, "-n", self.name, *args
+            _run_conda_command(
+                conda.Commands.RUN,
+                "-n",
+                self.name,
+                "--no-capture-output",
+                bin,
+                *args,
             )
         finally:
             if ld_lib_path is not None:
                 os.environ["LD_LIBRARY_PATH"] = ld_lib_path
-        return result

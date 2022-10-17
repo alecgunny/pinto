@@ -11,6 +11,8 @@ pinto = "pinto.cli:main"
 [tool.poetry.dependencies]
 python = "^3.8,<3.10"
 toml = "^0.10"
+python-dotenv = "^0.20"
+"hermes.typeo" = "^0.1.5"
 
 [tool.poetry.group.dev.dependencies]
 pip = "^21.3"
