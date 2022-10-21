@@ -86,7 +86,7 @@ or by cloning this repo and pip installing it locally
 
 ```
 (base) ~$ git clone https://github.com/ML4GW/pinto.git
-(base) ~$ python -m pip install pinto
+(base) ~$ python -m pip install pinto/
 ```
 
 ### Development Installation
