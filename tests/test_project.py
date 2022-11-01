@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 import pytest
 import toml
@@ -108,6 +109,63 @@ def test_conda_project_with_dotenv(
     project = Project(conda_dotenv_project_dir)
     project.install()
     validate_dotenv(project)
+
+
+@pytest.fixture(params=[11.2, "local-dir"])
+def cuda_version(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def conda(request):
+    return request.param
+
+
+CUDA_VERSION_SCRIPT = """
+import os
+
+print(os.environ["LD_LIBRARY_PATH"].split(":")[0])
+"""
+
+
+def test_project_with_cuda_version(
+    make_project_dir, cuda_version, conda, conda_environment_dict, capfd
+):
+    project_dir = make_project_dir("test_project", conda=conda)
+    if conda:
+        with open(project_dir / "environment.yaml", "w") as f:
+            yaml.dump(conda_environment_dict, f)
+
+    with open(project_dir / "test_project.py", "w") as f:
+        f.write(CUDA_VERSION_SCRIPT)
+
+    with open(project_dir / "pyproject.toml", "r") as f:
+        config = toml.load(f)
+
+    config["tool"]["pinto"] = {"cuda-version": str(cuda_version)}
+
+    with open(project_dir / "pyproject.toml", "w") as f:
+        toml.dump(config, f)
+
+    if not isinstance(cuda_version, float):
+        Path(cuda_version).mkdir()
+
+    try:
+        project = Project(project_dir)
+        project.install()
+        capfd.readouterr()
+
+        project.run("python", project_dir / "test_project.py")
+        stdout = capfd.readouterr().out
+
+        if isinstance(cuda_version, float):
+            assert stdout == f"/usr/local/cuda-{cuda_version}/lib64\n"
+        else:
+            assert stdout == (cuda_version + "\n")
+    finally:
+        shutil.rmtree(project_dir)
+        if not isinstance(cuda_version, float):
+            shutil.rmtree(cuda_version)
 
 
 PIPELINE_SCRIPT = """

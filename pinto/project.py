@@ -167,6 +167,26 @@ class Project(ProjectBase):
 
         if not self._venv.exists() or not self._venv.contains(self):
             self.install()
+
+        # check if the project has specified a CUDA version to run with
+        cuda_version = self.pinto_config.get("cuda-version")
+        if cuda_version is not None:
+            # if the version specified isn't a path to a CUDA
+            # lib directory, assume it specifies a version
+            # number and build the default path from it
+            if not Path(cuda_version).is_dir():
+                cuda_version = f"/usr/local/cuda-{cuda_version}/lib64"
+
+            # insert it at the front of the LD_LIBRARY_PATH
+            # environment variable so that it's the first
+            # place that gets checked
+            ld_library_path = os.environ.get("LD_LIBRARY_PATH", "")
+            os.environ["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
+
+        # now load any other environment variables
+        # passed in from a .env file so that users
+        # can override this default behavior if they
+        # really really need to
         self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")

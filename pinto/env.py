@@ -325,8 +325,8 @@ class CondaEnvironment(Environment):
 
     def run(self, bin: str, *args: str) -> None:
         ld_lib_path = os.environ.get("LD_LIBRARY_PATH")
-        if ld_lib_path is not None:
-            prefix = os.environ["CONDA_PREFIX"]
+        prefix = os.environ.get("CONDA_PREFIX")
+        if ld_lib_path is not None and prefix is not None:
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{prefix}/lib"
 
         try:
