@@ -324,11 +324,13 @@ class CondaEnvironment(Environment):
             pass
 
     def run(self, bin: str, *args: str) -> None:
-        ld_lib_path = os.environ.get("LD_LIBRARY_PATH")
-        prefix = os.environ.get("CONDA_PREFIX")
-        if ld_lib_path is not None and prefix is not None:
-            local = f"{prefix}/envs/{self.name}/lib:{prefix}/lib"
-            os.environ["LD_LIBRARY_PATH"] = f"{local}:{ld_lib_path}"
+        prefix = os.getenv("CONDA_PREFIX")
+        if prefix is not None:
+            ld_lib_path = f"{prefix}/envs/{self.name}/lib:{prefix}/lib"
+            existing_ld_path = os.getenv("LD_LIBRARY_PATH")
+            if existing_ld_path is not None:
+                ld_lib_path += f":{existing_ld_path}"
+            os.environ["LD_LIBRARY_PATH"] = ld_lib_path
 
         try:
             _run_conda_command(
@@ -340,5 +342,7 @@ class CondaEnvironment(Environment):
                 *args,
             )
         finally:
-            if ld_lib_path is not None:
-                os.environ["LD_LIBRARY_PATH"] = ld_lib_path
+            if prefix is not None and existing_ld_path is not None:
+                os.environ["LD_LIBRARY_PATH"] = existing_ld_path
+            elif prefix is not None:
+                os.environ.pop("LD_LIBRARY_PATH")
