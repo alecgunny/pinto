@@ -113,7 +113,7 @@ class Project(ProjectBase):
                     self.name, self.path, self._venv.name
                 )
             )
-            self._venv.install(extras=extras)
+            self._venv.install(extras=extras, update=force)
         elif force:
             logger.info(
                 "Updating project '{}' from '{}' in "
@@ -121,10 +121,7 @@ class Project(ProjectBase):
                     self.name, self.path, self._venv.name
                 )
             )
-            # TODO: should we do a `poetry update` rather
-            # than install in this case? What does that
-            # command look like for the poetry env?
-            self._venv.install(extras=extras)
+            self._venv.install(extras=extras, update=True)
         else:
             logger.info(
                 "Project '{}' at '{}' already installed in "

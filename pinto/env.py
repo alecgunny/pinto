@@ -100,7 +100,9 @@ class PoetryEnvironment(Environment):
         name = project.name.replace("-", "_")
         return self._venv.site_packages.find_distribution(name) is not None
 
-    def install(self, extras: Optional[Iterable[str]] = None) -> None:
+    def install(
+        self, extras: Optional[Iterable[str]] = None, update: bool = False
+    ) -> None:
         installer = Installer(
             self._io,
             self._venv,
@@ -110,7 +112,8 @@ class PoetryEnvironment(Environment):
             self._poetry.config,
         )
 
-        installer.update(True)
+        if update:
+            installer.update(True)
         installer.use_executor(True)
         if extras is not None:
             installer.extras(extras)
@@ -304,11 +307,14 @@ class CondaEnvironment(Environment):
         package_list = _run_conda_command(conda.Commands.LIST, "-n", self.name)
         return regex.search(package_list) is not None
 
-    def install(self, extras: Optional[Iterable[str]] = None):
+    def install(
+        self, extras: Optional[Iterable[str]] = None, update: bool = False
+    ) -> None:
         # use poetry binary explicitly since activating
         # environment may remove location from $PATH
         poetry_bin = shutil.which("poetry")
-        cmd = f"cd {self.project.path} && {poetry_bin} install"
+        poetry_cmd = "update" if update else "install"
+        cmd = f"cd {self.project.path} && {poetry_bin} {poetry_cmd}"
 
         # specify any extras and execute command
         if extras is not None:
