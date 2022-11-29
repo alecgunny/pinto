@@ -177,7 +177,7 @@ class Project(ProjectBase):
             # insert it at the front of the LD_LIBRARY_PATH
             # environment variable so that it's the first
             # place that gets checked
-            ld_library_path = os.environ.get("LD_LIBRARY_PATH", "")
+            ld_library_path = os.getenv("LD_LIBRARY_PATH", "")
             os.environ["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
 
         # now load any other environment variables
@@ -187,7 +187,14 @@ class Project(ProjectBase):
         self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")
-        response = self._venv.run(*args)
+        try:
+            response = self._venv.run(*args)
+        finally:
+            if cuda_version is not None:
+                if ld_library_path:
+                    os.environ["LD_LIBRARY_PATH"] = ld_library_path
+                else:
+                    os.environ.pop("LD_LIBRARY_PATH")
         return response
 
 
