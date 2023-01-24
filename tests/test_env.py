@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -76,7 +75,12 @@ def test_installed_env(extras, capfd):
 
 
 def test_poetry_environment(
-    poetry_project, poetry_env_context, extras, test_installed_env, capfd
+    poetry_project,
+    poetry_env_context,
+    extras,
+    test_installed_env,
+    capfd,
+    tmp_path,
 ):
     # make sure that the __new__ method maps correctly from
     # a project with no "poetry.toml" to a PoetryEnvironment
@@ -85,7 +89,7 @@ def test_poetry_environment(
 
     # make sure that the environment points to the
     # correct location and exists
-    assert env.path == Path(__file__).resolve().parent / "tmp"
+    assert env.path == tmp_path / "project"
     assert not env.exists()
 
     # create the underlying virtual environment
@@ -124,13 +128,14 @@ def test_conda_environment(
     extras,
     test_installed_env,
     capfd,
+    tmp_path,
 ):
     # make sure that the __new__ method maps correctly from
     # a project with a "poetry.toml" to a CondaEnvironment
     env = Environment(conda_project)
     assert isinstance(env, CondaEnvironment)
 
-    expected_path = Path(__file__).resolve().parent / "tmp"
+    expected_path = tmp_path / "project"
     expected_env = expected_path / ("environment." + yaml_extension)
     expected_name = "pinto-testenv"
     if nest:

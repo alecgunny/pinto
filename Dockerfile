@@ -1,10 +1,10 @@
-ARG CONDA_TAG=4.11.0
+ARG CONDA_TAG=4.12.0
 ARG dev=false
 
 FROM continuumio/miniconda3:${CONDA_TAG} as base
 
 SHELL ["/bin/bash", "-c"]
-ARG POETRY_VERSION=1.2.0b3
+ARG POETRY_VERSION=1.2.1
 ENV POETRY_VIRTUALENVS_PATH=/opt/conda/envs \
     CONDA_INIT=$CONDA_PREFIX/etc/profile.d/conda.sh
 

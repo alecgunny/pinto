@@ -8,4 +8,5 @@ authors = ["Alec Gunny <alec.gunny@gmail.com>"]
 testme = "pinto_nested_conda_example:main"
 
 [tool.poetry.dependencies]
+python = "^3.8"
 pip_install_test = "^0.5"

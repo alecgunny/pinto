@@ -5,15 +5,15 @@ import subprocess
 import sys
 import warnings
 from dataclasses import dataclass
+from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional
 
 import toml
 from cleo.application import Application
-from conda.cli import python_api as conda
-from conda.core.prefix_data import PrefixData
 
 from pinto.logging import logger
+from pinto.utils import temp_env_set
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -21,6 +21,12 @@ with warnings.catch_warnings():
     from poetry.installation.installer import Installer
     from poetry.masonry.builders import EditableBuilder
     from poetry.utils.env import EnvManager
+
+try:
+    from conda.cli import python_api as conda
+    from conda.core.prefix_data import PrefixData
+except ImportError:
+    raise ImportError("Can only use pinto with conda installed")
 
 if TYPE_CHECKING:
     from .project import Project
@@ -30,7 +36,7 @@ if TYPE_CHECKING:
 class Environment:
     project: "Project"
 
-    def __new__(self, project):
+    def __new__(cls, project: "Project") -> "Environment":
         try:
             with open(project.path / "poetry.toml", "r") as f:
                 poetry_config = toml.load(f)
@@ -53,6 +59,19 @@ class Environment:
         return self.project.path
 
 
+def _poetry_conda_context(f):
+    @wraps(f)
+    def wrapper(obj, *args, **kwargs):
+        # set this environment variable in case we're running
+        # inside a pinto virtual environment so that poetry
+        # doesn't know we're inside a virtualenv besides base
+        # and decide to use the system env
+        with temp_env_set(CONDA_DEFAULT_ENV="base"):
+            return f(obj, *args, **kwargs)
+
+    return wrapper
+
+
 @dataclass
 class PoetryEnvironment(Environment):
     def __post_init__(self):
@@ -68,6 +87,10 @@ class PoetryEnvironment(Environment):
         else:
             self.create()
 
+    @_poetry_conda_context
+    def get(self):
+        return self._manager.get()
+
     @property
     def env_root(self):
         if self._venv is None:
@@ -75,7 +98,7 @@ class PoetryEnvironment(Environment):
             # logic is a lot to reimplement and is the
             # environment doesn't exist yet, this seems
             # like a fair thing to return
-            return self._manager.get()
+            return self.get().path
         return self._venv.path
 
     @property
@@ -87,8 +110,9 @@ class PoetryEnvironment(Environment):
         )
 
     def exists(self) -> bool:
-        return self._manager.get() != self._manager.get_system_env()
+        return self.get() != self._manager.get_system_env()
 
+    @_poetry_conda_context
     def create(self):
         self._venv = self._manager.create_venv(self._io)
         return self._venv

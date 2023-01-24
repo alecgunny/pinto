@@ -1,0 +1,45 @@
+name: Build and test conda installation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test_conda_install:
+    name: Test conda installation
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+        miniconda-version: ["4.10.3", "4.11.0", "4.12.0"]
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - 
+        name: Check out the repo
+        uses: actions/checkout@v2
+      - 
+        name: Set up miniconda
+        uses: conda-incubator/setup-miniconda@v2.1.1
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+          auto-update-conda: true
+          miniconda-version: py39_${{ matrix.miniconda-version }}
+      -
+        name: Create virtualenv
+        run: |
+          sed -i 's/python<3.11/python=${{ matrix.python-version }}/g' environment.yaml
+          sed -i 's/git+https:\/\/github\.com\/ML4GW\/pinto@main/\.\[dev\]/g' environment.yaml
+          cat environment.yaml
+          conda env create -f environment.yaml
+          conda install -n pinto pytest pyyaml
+      -
+        name: Run tests in virtualenv
+        run: |
+          conda activate pinto
+          pytest tests -vvv

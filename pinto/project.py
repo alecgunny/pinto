@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from pinto.env import Environment
 from pinto.logging import logger
+from pinto.utils import temp_env_set
 
 
 @dataclass
@@ -167,6 +168,7 @@ class Project(ProjectBase):
 
         # check if the project has specified a CUDA version to run with
         cuda_version = self.pinto_config.get("cuda-version")
+        env = {}
         if cuda_version is not None:
             # if the version specified isn't a path to a CUDA
             # lib directory, assume it specifies a version
@@ -178,7 +180,7 @@ class Project(ProjectBase):
             # environment variable so that it's the first
             # place that gets checked
             ld_library_path = os.getenv("LD_LIBRARY_PATH", "")
-            os.environ["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
+            env["LD_LIBRARY_PATH"] = f"{cuda_version}:{ld_library_path}"
 
         # now load any other environment variables
         # passed in from a .env file so that users
@@ -187,14 +189,8 @@ class Project(ProjectBase):
         self.load_dotenv(kwargs.get("env"))
 
         logger.debug(f"Executing command '{args}' in project {self.path}")
-        try:
+        with temp_env_set(**env):
             response = self._venv.run(*args)
-        finally:
-            if cuda_version is not None:
-                if ld_library_path:
-                    os.environ["LD_LIBRARY_PATH"] = ld_library_path
-                else:
-                    os.environ.pop("LD_LIBRARY_PATH")
         return response
 
 

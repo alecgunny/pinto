@@ -70,7 +70,7 @@ class RunCommand(Command):
     """
 
     @classmethod
-    def add_arguments(self, parser: argparse.ArgumentParser):
+    def add_arguments(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-e",
             "--environment",
@@ -120,7 +120,7 @@ class BuildCommand(Command):
     """Build a project's environment"""
 
     @classmethod
-    def add_arguments(self, parser: argparse.ArgumentParser):
+    def add_arguments(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-f", "--force", action="store_true", help="Force rebuild"
         )

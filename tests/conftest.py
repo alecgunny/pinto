@@ -1,9 +1,7 @@
-import os
 import shutil
 import subprocess
 from contextlib import contextmanager
 from functools import partial
-from pathlib import Path
 
 import pytest
 import toml
@@ -32,11 +30,11 @@ def extras(request):
 
 
 @pytest.fixture
-def make_project_dir(conda_poetry_config):
+def make_project_dir(conda_poetry_config, tmp_path):
     def f(project_name, extras=None, conda=False, subdir=False):
-        project_dir = Path(__file__).resolve().parent / "tmp"
+        project_dir = tmp_path / "project"
         if subdir:
-            project_dir /= project_name
+            project_dir = project_dir / project_name
 
         standardized_name = project_name.replace("-", "_")
         # TODO: fixture for python version?
@@ -49,7 +47,7 @@ def make_project_dir(conda_poetry_config):
                     "authors": ["test author <test@testproject.biz>"],
                     "scripts": {"testme": standardized_name + ":main"},
                     "dependencies": {
-                        "python": ">=3.9,<3.11",
+                        "python": ">=3.8,<3.11",
                         "pip_install_test": "^0.5",
                     },
                 }
@@ -62,7 +60,7 @@ def make_project_dir(conda_poetry_config):
             }
             pyproject["tool"]["poetry"]["extras"] = {"extra": ["attrs"]}
 
-        os.makedirs(project_dir)
+        project_dir.mkdir(parents=True, exist_ok=False)
         with open(project_dir / "pyproject.toml", "w") as f:
             toml.dump(pyproject, f)
         with open(project_dir / (standardized_name + ".py"), "w") as f:
@@ -77,17 +75,15 @@ def make_project_dir(conda_poetry_config):
 
 
 @pytest.fixture
-def project_dir(make_project_dir, project_name, extras):
-    project_dir = make_project_dir(project_name, extras)
-    yield project_dir
-    shutil.rmtree(project_dir)
+def project_dir(make_project_dir, project_name, extras, tmp_path):
+    yield make_project_dir(project_name, extras)
+    shutil.rmtree(str(tmp_path))
 
 
 @pytest.fixture
-def conda_project_dir(make_project_dir, project_name, extras):
-    project_dir = make_project_dir(project_name, extras, True)
-    yield project_dir
-    shutil.rmtree(project_dir)
+def conda_project_dir(make_project_dir, project_name, extras, tmp_path):
+    yield make_project_dir(project_name, extras, True)
+    shutil.rmtree(str(tmp_path))
 
 
 @pytest.fixture(params=["yaml", "yml"])
@@ -109,11 +105,11 @@ def complete_conda_project_dir(
         # if we'r nesting, copy all the files from the
         # test project into a subdirectory
         project_dir = conda_project_dir / "testlib"
-        os.makedirs(project_dir)
-        for f in os.listdir(conda_project_dir):
-            if f == "testlib":
+        project_dir.mkdir()
+        for f in conda_project_dir.iterdir():
+            if f.name == "testlib":
                 continue
-            shutil.move(conda_project_dir / f, project_dir)
+            shutil.move(str(conda_project_dir / f), project_dir)
 
         # if we're testing the "<name>-base" syntax, replace
         # the name in the environment dictionary
@@ -180,7 +176,7 @@ def poetry_env_context():
         try:
             yield
         finally:
-            shutil.rmtree(env.env_root)
+            shutil.rmtree(str(env.env_root))
 
     return ctx
 
@@ -215,7 +211,7 @@ def dotenv(request):
 
 @pytest.fixture
 def validate_dotenv(dotenv, capfd):
-    def f(project):
+    def f(project_dir, run_fn, expected_raise):
         script = """
             import os
             print(os.environ['ENVARG1'])
@@ -223,26 +219,29 @@ def validate_dotenv(dotenv, capfd):
         """
         script = "\n".join([i.strip() for i in script.splitlines()])
 
+        cmd = ["python", "-c", script]
         if dotenv != ".env":
             # if there's no .env, pinto won't know to look for one
             # and so the environment variables should not get set
-            with pytest.raises(SystemExit):
-                project.run("python", "-c", script)
-            stderr = capfd.readouterr().err
+            with pytest.raises(expected_raise) as exc:
+                run_fn(*cmd, env=None)
+
+            if expected_raise is SystemExit:
+                stderr = capfd.readouterr().err
+            else:
+                stderr = str(exc.value)
             assert "KeyError" in stderr
 
             # if there is an env file, just not one called .env,
             # we can specify explicitly via the `env` argument
             if dotenv is not None:
-                env = str(project.path / dotenv)
-                project.run("python", "-c", script, env=env)
-                stdout = capfd.readouterr().out
-                assert stdout == "thom\nthom-yorke\n"
+                env = str(project_dir / dotenv)
+                stdout = run_fn(*cmd, env=env)
+                assert stdout.endswith("thom\nthom-yorke\n")
         elif dotenv == ".env":
             # if there is a .env file, we shouldn't need to
             # specify anything: pinto will pick it up on its own
-            project.run("python", "-c", script)
-            stdout = capfd.readouterr().out
+            stdout = run_fn(*cmd, env=None)
             assert stdout.endswith("thom\nthom-yorke\n")
 
     return f
