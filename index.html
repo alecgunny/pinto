@@ -37,6 +37,15 @@
 <section class="tex2jax_ignore mathjax_ignore" id="pinto">
 <h2>Pinto<a class="headerlink" href="#pinto" title="Permalink to this headline">¶</a></h2>
 <p>A command line utility for managing and running jobs in complex Python environments.</p>
+<p>Support tested for:</p>
+<p><img alt="poetry 1.2.0a2" src="https://img.shields.io/badge/poetry-1.2.0a2-sucess" />
+<img alt="poetry 1.2.0b2" src="https://img.shields.io/badge/poetry-1.2.0b2-sucess" />
+<img alt="poetry 1.2.0b3" src="https://img.shields.io/badge/poetry-1.2.0b3-sucess" />
+<img alt="poetry 1.2.1" src="https://img.shields.io/badge/poetry-1.2.1-sucess" />
+<img alt="poetry 1.2.2" src="https://img.shields.io/badge/poetry-1.2.2-sucess" /></p>
+<p><img alt="conda 4.10.3" src="https://img.shields.io/badge/conda-4.10.3-sucess" />
+<img alt="conda 4.11.0" src="https://img.shields.io/badge/conda-4.11.0-sucess" />
+<img alt="conda 4.12.0" src="https://img.shields.io/badge/conda-4.12.0-sucess" /></p>
 <section id="background">
 <h3>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h3>
 <p>Most ongoing research in the <a class="reference external" href="https://github.com/ML4GW">ML4GW</a> organization leverages <a class="reference external" href="https://python-poetry.org/">Poetry</a> for managing Python virtual environments in the context of a <a class="reference external" href="https://medium.com/opendoor-labs/our-python-monorepo-d34028f2b6fa">Python monorepo</a>. In particular, Poetry makes managing a shared set of libraries between jobs within a project <a class="reference external" href="https://python-poetry.org/docs/dependency-specification/#path-dependencies">simple and straightforward</a>.</p>
@@ -90,32 +99,70 @@
 </section>
 <section id="installation">
 <h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
-<section id="environment-set-up">
-<h4>Environment set up<a class="headerlink" href="#environment-set-up" title="Permalink to this headline">¶</a></h4>
-<p>Pinto requires local versions of both Conda and Poetry.
-First make sure that you have a <em>local</em> version of Conda installed in your environment (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>. I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway).
-Then install Poetry into your base Conda environment via <code class="docutils literal notranslate"><span class="pre">pip</span></code> rather than using the Poetry installer</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install &quot;poetry&gt;1.2.0&quot;</span>
+<p>For any non-containerized installation methods, please consult the support matrix at the top of this document to see which versions of Anaconda and Poetry are supported by <code class="docutils literal notranslate"><span class="pre">pinto</span></code>.</p>
+<section id="container">
+<h4>Container<a class="headerlink" href="#container" title="Permalink to this headline">¶</a></h4>
+<p>The simplest way to get started with pinto is to use the container published by this repository, which is made available through GitHub’s container registry. You can pull it by running</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">pull</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">ML4GW</span><span class="o">/</span><span class="n">pinto</span><span class="p">:</span><span class="n">main</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry">this document</a> for information about how to authenticate to the GitHub container reigstry.</p>
+</section>
+<section id="conda">
+<h4>Conda<a class="headerlink" href="#conda" title="Permalink to this headline">¶</a></h4>
+<p>Pinto can only be installed on top of Anaconda, so make sure you have a <em>local</em> install available to work with (instructions found <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html">here</a>. I particularly recommend using Miniconda for a bare install, since most your work will be in virtual environments anyway.</p>
+<blockquote>
+<div><p><strong>NOTE</strong>: <code class="docutils literal notranslate"><span class="pre">pinto</span></code> is currently only compatible with 4.x Conda versions!! To find the appropriate Miniconda installer, please look at the <a class="reference external" href="https://repo.anaconda.com/miniconda/">installer archives</a>.</p>
+</div></blockquote>
+<p>Your options are then to either install <code class="docutils literal notranslate"><span class="pre">pinto</span></code> in the <code class="docutils literal notranslate"><span class="pre">base</span></code> conda environment (recommended), or in a virtual environment. If you choose to go the latter route, the conda environments managed by pinto will be kept in a subdirectory of pinto’s environment.</p>
+<section id="installing-in-the-base-conda-environment">
+<h5>Installing in the base conda environment<a class="headerlink" href="#installing-in-the-base-conda-environment" title="Permalink to this headline">¶</a></h5>
+<p>First install poetry via pip</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install &quot;poetry&gt;1.2.0,&lt;1.3.0&quot;</span>
+</pre></div>
+</div>
+<p>then install pinto via pip</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install git+https://github.com/ML4GW/pinto@main</span>
 </pre></div>
 </div>
 </section>
-<section id="install">
-<h4>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h4>
-<p>You can install <code class="docutils literal notranslate"><span class="pre">pinto</span></code> in your base Conda environment with pip, either by pointing at this GitHub repo</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install git+https://github.com/ML4GW/pinto.git</span>
+<section id="in-a-virtual-environment">
+<h5>In a virtual environment<a class="headerlink" href="#in-a-virtual-environment" title="Permalink to this headline">¶</a></h5>
+<p>If you don’t want to install pinto into your <code class="docutils literal notranslate"><span class="pre">base</span></code> conda environment, you can install it by creating an environment file like the one found <span class="xref myst">here</span>, and creating a virtual environment like:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ conda env create -f environment.yaml</span>
 </pre></div>
 </div>
-<p>or by cloning this repo and pip installing it locally</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(base) ~$ git clone https://github.com/ML4GW/pinto.git
-(base) ~$ python -m pip install pinto/
+<p>You can then activate your pinto environment and execute commands inside of it</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ conda activate pinto</span>
+<span class="gp gp-VirtualEnv">(pinto)</span> <span class="go">~$ pinto --version</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="setting-the-poetry-virtualenvs-path">
+<h4>Setting the Poetry virtualenvs path<a class="headerlink" href="#setting-the-poetry-virtualenvs-path" title="Permalink to this headline">¶</a></h4>
+<p>Whether you installed pinto your base environment or in a virtual environment, we recommend setting up Poetry’s default virtual environment path so that it installs environments to the same location as conda. With the desired environment activated, run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base OR pinto)</span> <span class="go">~$ poetry config virtualenvs.path $CONDA_PREFIX/envs</span>
 </pre></div>
 </div>
 </section>
 <section id="development-installation">
 <h4>Development Installation<a class="headerlink" href="#development-installation" title="Permalink to this headline">¶</a></h4>
-<p>The best way to install <code class="docutils literal notranslate"><span class="pre">pinto</span></code> for development is to clone this repo and perform an editable installation with the development dependencies included:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(base) ~$ git clone https://github.com/ML4GW/pinto.git
-(base) ~$ python -m pip install -e pinto[dev]
+<p>To develop pinto, clone the repo locally</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ git clone https://github.com/ML4GW/pinto.git</span>
+</pre></div>
+</div>
+<p>Then complete either installation method above, but with the local library installed editably. For base installs:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ python -m pip install -e ./pinto[dev]</span>
+</pre></div>
+</div>
+<p>For virtual environment installs, edit the <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> so that the pinto install line is replaced with</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span>  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">-e .[dev]</span>
+</pre></div>
+</div>
+<p>Then run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ cd pinto</span>
+<span class="gp gp-VirtualEnv">(base)</span> <span class="go">~$ conda env create -f environment.yaml</span>
 </pre></div>
 </div>
 </section>
