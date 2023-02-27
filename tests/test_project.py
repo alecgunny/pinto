@@ -141,10 +141,10 @@ def conda(request):
     return request.param
 
 
-CUDA_VERSION_SCRIPT = """
+GET_LD_LIB_SCRIPT = """
 import os
 
-print(os.environ["LD_LIBRARY_PATH"])
+print(os.getenv("LD_LIBRARY_PATH", "Nothin"))
 """
 
 
@@ -157,13 +157,11 @@ def test_project_with_cuda_version(
             yaml.dump(conda_environment_dict, f)
 
     with open(project_dir / "test_project.py", "w") as f:
-        f.write(CUDA_VERSION_SCRIPT)
+        f.write(GET_LD_LIB_SCRIPT)
 
     with open(project_dir / "pyproject.toml", "r") as f:
         config = toml.load(f)
-
     config["tool"]["pinto"] = {"cuda-version": str(cuda_version)}
-
     with open(project_dir / "pyproject.toml", "w") as f:
         toml.dump(config, f)
 
@@ -268,3 +266,42 @@ def test_pipeline(make_project_dir, dotenv, capfd):
             assert f"arg is equal to {i}" in stdout
     finally:
         shutil.rmtree(project_dir.parent)
+
+
+@pytest.mark.parametrize("override", [True, False, None])
+def test_conda_env_with_ld_lib(
+    override, make_project_dir, conda_environment_dict, capfd
+):
+    project_dir = make_project_dir("test_project", conda=True)
+    with open(project_dir / "environment.yaml", "w") as f:
+        yaml.dump(conda_environment_dict, f)
+
+    with open(project_dir / "test_project.py", "w") as f:
+        f.write(GET_LD_LIB_SCRIPT)
+
+    # if we specified an explicit (not None) value
+    # for override, add it to the project pinto config
+    if override is not None:
+        conda_config = {"append_base_ld_library_path": override}
+        with open(project_dir / "pyproject.toml", "r") as f:
+            config = toml.load(f)
+        config["tool"]["pinto"] = {"conda": conda_config}
+        with open(project_dir / "pyproject.toml", "w") as f:
+            toml.dump(config, f)
+
+    prefix = os.environ["CONDA_PREFIX"]
+    try:
+        project = Project(project_dir)
+        project.install()
+        capfd.readouterr()
+
+        project.run("python", project_dir / "test_project.py")
+        stdout = capfd.readouterr().out.splitlines()[-1]
+        if not override:
+            assert stdout == "Nothin"
+        else:
+            paths = stdout.split(":")
+            assert f"{project._venv.env_root}/lib" in paths
+            assert f"{prefix}/lib" in paths
+    finally:
+        shutil.rmtree(project_dir)

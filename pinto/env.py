@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import warnings
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
@@ -353,16 +354,42 @@ class CondaEnvironment(Environment):
         except KeyError:
             pass
 
-    def run(self, bin: str, *args: str) -> None:
+    @contextmanager
+    def _insert_base_ld_lib(self):
+        """
+        sometimes conda environments will point to c++ libs
+        installed in the base environment. You can get around
+        conflicts by manually inserting the base environment
+        lib directory at the front of LD_LIBRARY_PATH. Check
+        if the user's pinto config indicates that they'd like
+        to do this, and that there's a valid base conda prefix
+        to use to insert in the first place
+        """
+
         prefix = os.getenv("CONDA_PREFIX")
-        if prefix is not None:
+        existing_ld_path = os.getenv("LD_LIBRARY_PATH")
+
+        conda_config = self.project.pinto_config.get("conda", {})
+        insert_ld_lib = conda_config.get("append_base_ld_library_path", False)
+        insert_ld_lib &= prefix is not None
+        if insert_ld_lib:
+            # prefer our own ld library path, but add
+            # the base ld library path as well
             ld_lib_path = f"{prefix}/envs/{self.name}/lib:{prefix}/lib"
-            existing_ld_path = os.getenv("LD_LIBRARY_PATH")
             if existing_ld_path is not None:
                 ld_lib_path += f":{existing_ld_path}"
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path
 
         try:
+            yield
+        finally:
+            if insert_ld_lib and existing_ld_path is not None:
+                os.environ["LD_LIBRARY_PATH"] = existing_ld_path
+            elif insert_ld_lib:
+                os.environ.pop("LD_LIBRARY_PATH")
+
+    def run(self, bin: str, *args: str) -> None:
+        with self._insert_base_ld_lib():
             _run_conda_command(
                 conda.Commands.RUN,
                 "-n",
@@ -371,8 +398,3 @@ class CondaEnvironment(Environment):
                 bin,
                 *args,
             )
-        finally:
-            if prefix is not None and existing_ld_path is not None:
-                os.environ["LD_LIBRARY_PATH"] = existing_ld_path
-            elif prefix is not None:
-                os.environ.pop("LD_LIBRARY_PATH")
