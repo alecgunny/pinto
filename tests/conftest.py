@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from contextlib import contextmanager
@@ -47,7 +48,7 @@ def make_project_dir(conda_poetry_config, tmp_path):
                     "authors": ["test author <test@testproject.biz>"],
                     "scripts": {"testme": standardized_name + ":main"},
                     "dependencies": {
-                        "python": ">=3.8,<3.11",
+                        "python": "^3.8",
                         "pip_install_test": "^0.5",
                     },
                 }
@@ -158,8 +159,9 @@ def _conda_env_context(env, nest):
                 raise RuntimeError(response.stderr)
 
             # remove the environment package cache
+            env_root = os.path.join(os.environ["CONDA_ROOT"], "envs", env_name)
             try:
-                PrefixData._cache_.pop(env.env_root)
+                PrefixData._cache_.pop(env_root)
             except KeyError:
                 pass
 

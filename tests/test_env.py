@@ -50,6 +50,7 @@ def test_installed_env(extras, capfd):
         # make sure that the `contains` method correctly
         # reflects the installation status
         assert env.contains(project)
+        capfd.readouterr()
 
         # make sure we can run our `testme` script
         # and that it produces the appropriate output
@@ -163,12 +164,14 @@ def test_conda_environment(
     # the tests in a context so that it gets
     # deleted at the end
     env.create()
+    env.contains(conda_project)
     with conda_env_context(env):
         # make sure the environment exists now, but
         # that it still doesn't contain the relevant
         # project since we haven't installed it
         assert env.exists()
         assert not env.contains(conda_project)
+        capfd.readouterr()
 
         # make sure that we can import the dependency
         # listed in our _conda_ environment file, and
@@ -179,10 +182,14 @@ def test_conda_environment(
 
         # now install the test package and run the
         # standard tests on it
-        if extras is None:
-            env.install()
-        else:
-            env.install(extras=["extra"])
+        try:
+            if extras is None:
+                env.install()
+            else:
+                env.install(extras=["extra"])
+        except Exception:
+            print(capfd.readouterr())
+            raise
 
         capfd.readouterr()  # clear the stdout buffer
         test_installed_env(env, conda_project)

@@ -63,7 +63,7 @@ def test_cli_build_poetry(
 
 
 def test_cli_run_poetry(project_dir, project_flag, poetry_env_context):
-    cmd = [shutil.which("pinto"), "-v"]
+    cmd = [shutil.which("pinto")]
     if project_flag is None:
         cwd = str(project_dir)
     else:

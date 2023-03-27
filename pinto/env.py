@@ -67,7 +67,7 @@ def _poetry_conda_context(f):
         # inside a pinto virtual environment so that poetry
         # doesn't know we're inside a virtualenv besides base
         # and decide to use the system env
-        with temp_env_set(CONDA_DEFAULT_ENV="base"):
+        with temp_env_set(action="replace", CONDA_DEFAULT_ENV="base"):
             return f(obj, *args, **kwargs)
 
     return wrapper
@@ -155,14 +155,15 @@ class PoetryEnvironment(Environment):
         the process and prevents testing/pipeline execution
         """
         command = self._venv.get_command_from_bin(bin) + list(args)
-        env = dict(os.environ)
-        exe = subprocess.Popen(
-            [command[0]] + command[1:], env=env, shell=False
-        )
-        exe.communicate()
+        with temp_env_set(action="insert", PATH=self.env_root / "bin"):
+            env = dict(os.environ)
+            exe = subprocess.Popen(
+                [command[0]] + command[1:], env=env, shell=False
+            )
+            exe.communicate()
 
-        if exe.returncode:
-            sys.exit(exe.returncode)
+            if exe.returncode:
+                sys.exit(exe.returncode)
 
 
 def _run_conda_command(*args):
@@ -367,26 +368,16 @@ class CondaEnvironment(Environment):
         """
 
         prefix = os.getenv("CONDA_PREFIX")
-        existing_ld_path = os.getenv("LD_LIBRARY_PATH")
-
         conda_config = self.project.pinto_config.get("conda", {})
         insert_ld_lib = conda_config.get("append_base_ld_library_path", False)
         insert_ld_lib &= prefix is not None
-        if insert_ld_lib:
-            # prefer our own ld library path, but add
-            # the base ld library path as well
-            ld_lib_path = f"{prefix}/envs/{self.name}/lib:{prefix}/lib"
-            if existing_ld_path is not None:
-                ld_lib_path += f":{existing_ld_path}"
-            os.environ["LD_LIBRARY_PATH"] = ld_lib_path
 
-        try:
+        if not insert_ld_lib:
             yield
-        finally:
-            if insert_ld_lib and existing_ld_path is not None:
-                os.environ["LD_LIBRARY_PATH"] = existing_ld_path
-            elif insert_ld_lib:
-                os.environ.pop("LD_LIBRARY_PATH")
+        else:
+            ld_lib_path = f"{prefix}/envs/{self.name}/lib:{prefix}/lib"
+            with temp_env_set(action="append", LD_LIBRARY_PATH=ld_lib_path):
+                yield
 
     def run(self, bin: str, *args: str) -> None:
         with self._insert_base_ld_lib():
